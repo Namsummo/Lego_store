@@ -2,7 +2,7 @@
 
 import { AnhSanPham, SanPham } from "@/components/types/product.type";
 
-const API_URL = "http://localhost:8081/api";
+const API_URL = "http://localhost:8080/api";
 
 export const sanPhamService = {
   async getSanPhams(): Promise<SanPham[]> {

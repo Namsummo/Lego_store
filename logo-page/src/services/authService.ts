@@ -21,7 +21,7 @@ interface LoginResponse {
   export const authenService = {
     // Đăng ký
   async register(user_name: string, email: string, matKhau: string): Promise<RegisterResponse> {
-  const res = await fetch(`${API_BASE_URL}/register`, {
+      const res = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

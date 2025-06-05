@@ -1,6 +1,6 @@
 import { BoSuTap } from "@/components/types/product.type";
 
-const API_URL ='http://localhost:8081/api/bosuutap';
+const API_URL ='http://localhost:8080/api/bosuutap';
 export const boSuuTapService ={
     async getBoSutap():Promise<BoSuTap [] >{
         try{
