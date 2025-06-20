@@ -4,7 +4,7 @@ import React from "react";
 import SanPhamList from "./SanPhamList";
 import Navbar from "../(pages)/Navbar";
 import { useDanhMuc } from "@/hooks/useDanhMuc";
-const CATEGORY_NAMES = ["Star Wars11", "Siêu anh hùng", "Ninjago"];
+const CATEGORY_NAMES = ["Siêu anh hùng", "Ninjago"];
 
 export default function MainHome() {
   const {

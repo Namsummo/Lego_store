@@ -291,3 +291,29 @@ input {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
+
+/* Đảm bảo chữ trong ô input luôn có màu đen */
+/* input, textarea, select {
+  color: #000 !important;
+  caret-color: #000 !important;
+} */
+
+/* Đối với các component của shadcn UI */
+/* .input-custom, 
+[data-slot="input"],
+[data-slot="textarea"] {
+  color: #000 !important;
+  caret-color: #000 !important;
+} */
+
+/* Đảm bảo placeholder vẫn có màu xám nhạt */
+input::placeholder, textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Chỉ áp dụng cho form khuyến mãi */
+/* .promotion-form input,
+.promotion-form textarea {
+  color: #000 !important;
+  caret-color: #000 !important;
+} */

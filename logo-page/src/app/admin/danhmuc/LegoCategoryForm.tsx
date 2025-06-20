@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -36,8 +36,13 @@ export const LegoCategoryForm: React.FC<LegoCategoryFormProps> = ({
     }
   }, [categoryToEdit]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.id as keyof DanhMuc]: e.target.value });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.id as keyof DanhMuc]: e.target.value,
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -64,7 +69,10 @@ export const LegoCategoryForm: React.FC<LegoCategoryFormProps> = ({
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <Label htmlFor="tenDanhMuc" className="text-white text-sm flex items-center gap-2">
+          <Label
+            htmlFor="tenDanhMuc"
+            className="text-white text-sm flex items-center gap-2"
+          >
             <Layers className="w-4 h-4 text-primary" /> Tên danh mục*
           </Label>
           <Input
@@ -76,7 +84,10 @@ export const LegoCategoryForm: React.FC<LegoCategoryFormProps> = ({
           />
         </div>
         <div>
-          <Label htmlFor="moTa" className="text-sm font-medium text-gray-300 flex items-center">
+          <Label
+            htmlFor="moTa"
+            className="text-sm font-medium text-gray-300 flex items-center"
+          >
             <Palette className="w-4 h-4 mr-2 text-primary" /> Mô tả
           </Label>
           <textarea
@@ -95,7 +106,8 @@ export const LegoCategoryForm: React.FC<LegoCategoryFormProps> = ({
             </Button>
           )}
           <Button type="submit" variant="default">
-            <PlusCircle className="mr-2 h-5 w-5" /> {categoryToEdit ? "Lưu thay đổi" : "Thêm danh mục"}
+            <PlusCircle className="mr-2 h-5 w-5" />{" "}
+            {categoryToEdit ? "Lưu thay đổi" : "Thêm danh mục"}
           </Button>
         </div>
       </form>

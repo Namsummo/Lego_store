@@ -3,7 +3,14 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Edit, Trash2 } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { SanPham } from "@/components/types/product.type";
 
 interface Props {
@@ -14,9 +21,19 @@ interface Props {
   getTenBoSuuTap: (id: number) => string;
 }
 
-const LegoProductTable: React.FC<Props> = ({ products, onEdit, onDelete, getTenDanhMuc, getTenBoSuuTap }) => {
+const LegoProductTable: React.FC<Props> = ({
+  products,
+  onEdit,
+  onDelete,
+  getTenDanhMuc,
+  getTenBoSuuTap,
+}) => {
   return (
-    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 mb-8 rounded-md border border-white/20 bg-[#10123c]">
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-6 mb-8 rounded-md border border-white/20 bg-[#10123c]"
+    >
       <Table>
         <TableHeader>
           <TableRow>
@@ -36,7 +53,13 @@ const LegoProductTable: React.FC<Props> = ({ products, onEdit, onDelete, getTenD
         <TableBody>
           {products.map((p) => (
             <TableRow key={p.id}>
-              <TableCell><img src={p.anhDaiDien ?? "/default.jpg"} alt={p.tenSanPham} className="w-12 h-12 object-cover rounded" /></TableCell>
+              <TableCell>
+                <img
+                  src={p.anhDaiDien ?? "/default.jpg"}
+                  alt={p.tenSanPham}
+                  className="w-12 h-12 object-cover rounded"
+                />
+              </TableCell>
               <TableCell>{p.maSanPham}</TableCell>
               <TableCell>{p.tenSanPham}</TableCell>
               <TableCell>{getTenDanhMuc(p.danhMucId)}</TableCell>

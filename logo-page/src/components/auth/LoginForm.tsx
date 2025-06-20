@@ -16,6 +16,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { authenService } from "@/services/authService";
+import { useUserStore } from "@/context/authStore.store";
 
 const logInSchema = z.object({
   email: z
@@ -33,8 +34,8 @@ type LogInFormType = z.infer<typeof logInSchema>;
 export default function LoginForm() {
   const [showmatKhau, setShowmatKhau] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
   const router = useRouter();
+  const setUser = useUserStore((state) => state.setUser);
 
   const form = useForm<LogInFormType>({
     resolver: zodResolver(logInSchema),
@@ -44,8 +45,10 @@ export default function LoginForm() {
   const onSubmit = async (data: LogInFormType) => {
     setIsLoading(true);
     try {
-      await authenService.login(data.email, data.matKhau);
-
+      const res = await authenService.login(data.email, data.matKhau);
+      // lấy email người dùng
+      const { id, ten, email } = res;
+      setUser({ id, ten, email });
       router.push("/");
     } catch (error: unknown) {
       console.error("Lỗi:", error);
@@ -57,7 +60,6 @@ export default function LoginForm() {
         error !== null &&
         "message" in error
       ) {
-        // Nếu error là một đối tượng có thuộc tính 'message' (ví dụ: từ API)
         form.setError("email", {
           message: (error as { message: string }).message,
         });

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React from "react";
 import { motion } from "framer-motion";
@@ -16,7 +16,7 @@ import { DanhMuc } from "@/components/types/product.type";
 interface LegoCategoryTableProps {
   categories: DanhMuc[];
   onEdit: (category: DanhMuc) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: number, tenBoSuuTap: string) => void;
 }
 
 const LegoCategoryTable: React.FC<LegoCategoryTableProps> = ({
@@ -53,7 +53,7 @@ const LegoCategoryTable: React.FC<LegoCategoryTableProps> = ({
                     <Edit className="w-4 h-4 text-yellow-500" />
                   </button>
                   <button
-                    onClick={() => onDelete(c.id)}
+                    onClick={() => onDelete(c.id, c.tenDanhMuc)}
                     className="hover:opacity-80 transition"
                     title="Xóa"
                   >
