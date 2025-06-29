@@ -15,13 +15,22 @@ export const productSchema = z.object({
     .string()
     .nonempty("Mô tả sản phẩm là bắt buộc")
     .max(1000, "Mô tả không được vượt quá 1000 ký tự"),
-  anhDaiDien: z.string().optional().nullable(),
+  // anhDaiDien: z.string().optional().nullable(),
   doTuoi: z
     .number({ required_error: "Độ tuổi là bắt buộc" })
     .min(6, "Tuổi phải lớn hơn hoặc bằng 6 và nhỏ hơn hoặc bằng 50 ")
     .max(50, "Tuổi phải lớn hơn hoặc bằng 6 và nhỏ hơn hoặc bằng 50 "),
-  danhMucId: z.number({ required_error: "Danh mục là bắt buộc" }),
-  boSuuTapId: z.number({ required_error: "Bộ sưu tập là bắt buộc" }),
+  idDanhMuc: z.number({ required_error: "Danh mục là bắt buộc" }),
+  idBoSuuTap: z.number({ required_error: "Bộ sưu tập là bắt buộc" }),
+});
+
+export const anhSanPhamSchema = z.object({
+  file: z.any().refine((file) => file?.length === 1, "Cần chọn đúng 1 ảnh"),
+  thuTu: z.number({ required_error: "Không để trống số thứ tự" }),
+  anhChinh: z.boolean(),
+  sanPhamId: z.coerce.number().min(1, "Phải có ID sản phẩm"),
+  moTa: z.string().optional(),
 });
 
 export type ProductData = z.infer<typeof productSchema>;
+export type AnhSanPhamData = z.infer<typeof anhSanPhamSchema>;

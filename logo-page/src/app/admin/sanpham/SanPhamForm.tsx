@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -29,7 +28,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
 
 interface Props {
   onSubmit: (data: ProductData, id?: number) => void;
@@ -47,18 +45,16 @@ export default function SanPhamForm({
     defaultValues: {
       tenSanPham: "",
       moTa: "",
-      danhMucId: undefined,
-      boSuuTapId: undefined,
+      idDanhMuc: undefined,
+      idBoSuuTap: undefined,
       gia: 1000,
       doTuoi: undefined,
-      trangThai: "Còn hàng",
-      anhDaiDien: "",
+      trangThai: "Đang kinh doanh",
+      // anhDaiDien: "",
       soLuongTon: undefined,
       soLuongManhGhep: undefined,
     },
   });
-
-  const [preview, setPreview] = useState<string | null>(null);
 
   const { data: danhMucList = [], isLoading: isLoadingDanhMuc } = useDanhMuc();
   const { data: BoSuuTapList = [], isLoading: isLoadingBoSuuTap } =
@@ -69,66 +65,43 @@ export default function SanPhamForm({
       form.reset({
         tenSanPham: edittingSanPham.tenSanPham,
         moTa: edittingSanPham.moTa ?? "",
-        danhMucId: edittingSanPham.idDanhMuc,
-        boSuuTapId: edittingSanPham.idBoSuuTap,
+        idDanhMuc: edittingSanPham.idDanhMuc,
+        idBoSuuTap: edittingSanPham.idBoSuuTap,
         soLuongTon: edittingSanPham.soLuongTon,
         gia: edittingSanPham.gia,
         doTuoi: edittingSanPham.doTuoi,
         soLuongManhGhep: edittingSanPham.soLuongManhGhep,
         trangThai: edittingSanPham.trangThai,
-        anhDaiDien: edittingSanPham.anhDaiDien ?? "",
       });
-      setPreview(edittingSanPham.anhDaiDien ?? null);
     } else {
       form.reset();
-      setPreview(null);
     }
   }, [edittingSanPham, form]);
 
   useEffect(() => {
     const subscription = form.watch((values) => {
       const sl = values.soLuongTon ?? 0;
-      const expectedTrangThai = sl > 0 ? "Còn hàng" : "Hết hàng";
+      const current = values.trangThai;
 
-      if (values.trangThai !== expectedTrangThai) {
-        form.setValue("trangThai", expectedTrangThai);
+      const expected = sl > 0 ? "Đang kinh doanh" : "Ngừng kinh doanh";
+
+      if (current !== expected) {
+        form.setValue("trangThai", expected);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [form]);
 
-  const handleUploadImage = async (file: File, sanPhamId: number) => {
-    const formData = new FormData();
-    formData.append("files", file);
-    formData.append("anhChinh", "true");
-    formData.append("sanPhamId", sanPhamId.toString());
-
-    const res = await fetch("http://localhost:8080/api/anhsp/upload-images", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Upload failed:", text);
-      toast.error("Lỗi khi upload ảnh đại diện");
-      return null;
-    }
-
-    const data = await res.json();
-    return data[0]?.url;
-  };
-
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(async (data) => {
+          console.log("Submit update:", data, edittingSanPham?.id);
           await onSubmit(data, edittingSanPham?.id);
-          setPreview(null);
           onSucces?.();
         })}
-        className="space-y-4"
+        className="gap-2 p-2 flex-col flex "
       >
         <FormField
           control={form.control}
@@ -151,7 +124,11 @@ export default function SanPhamForm({
             <FormItem>
               <FormLabel>Mô tả</FormLabel>
               <FormControl>
-                <Textarea placeholder="Nhập mô tả sản phẩm" {...field} />
+                <Textarea
+                  placeholder="Nhập mô tả sản phẩm"
+                  {...field}
+                  className="h-30"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -162,7 +139,7 @@ export default function SanPhamForm({
           <div className="basis-full sm:basis-1/2 lg:basis-1/3">
             <FormField
               control={form.control}
-              name="danhMucId"
+              name="idDanhMuc"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Danh mục</FormLabel>
@@ -192,7 +169,7 @@ export default function SanPhamForm({
           <div className="basis-full sm:basis-1/2 lg:basis-1/3">
             <FormField
               control={form.control}
-              name="boSuuTapId"
+              name="idBoSuuTap"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Bộ Sưu Tập</FormLabel>
@@ -281,6 +258,7 @@ export default function SanPhamForm({
                       }}
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -317,85 +295,21 @@ export default function SanPhamForm({
                 <FormItem>
                   <FormLabel>Trạng thái</FormLabel>
                   <FormControl>
-                    <Select
-                      value={field.value}
-                      onValueChange={(value) => {
-                        const currentSoLuongTon =
-                          form.getValues("soLuongTon") ?? 0;
-                        if (value === "Hết hàng" && currentSoLuongTon > 0) {
-                          toast.error(
-                            "Không thể đặt trạng thái 'Hết hàng' khi số lượng tồn lớn hơn 0"
-                          );
-                        } else if (
-                          value === "Còn hàng" &&
-                          currentSoLuongTon == 0
-                        ) {
-                          toast.error(
-                            "Không thể đặt trạng thái 'Còn hàng' khi số lượng tồn  bằng 0"
-                          );
-                          return;
-                        }
-
-                        field.onChange(value);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn trạng thái" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Còn hàng">Còn hàng</SelectItem>
-                        <SelectItem value="Hết hàng">Hết hàng</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      {...field}
+                      disabled
+                      className="bg-gray-200 text-gray-200"
+                    />
                   </FormControl>
                 </FormItem>
               )}
             />
           </div>
         </div>
-        <div className="flex gap-3 items-center ">
+        <div className="flex gap-3 items-center mt-4 mb-2 ">
           <span> Nổi bật</span>
           <Switch />
         </div>
-
-        <FormField
-          control={form.control}
-          name="anhDaiDien"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ảnh đại diện</FormLabel>
-              <FormControl>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const uploadedUrl = await handleUploadImage(file);
-                      if (uploadedUrl) {
-                        const fullUrl = `/api/anhsp/images/${uploadedUrl}`;
-                        setPreview(fullUrl);
-                        field.onChange(fullUrl);
-                      }
-                    }
-                  }}
-                />
-              </FormControl>
-
-              {preview && (
-                <div className="mt-2 w-40 h-40 relative">
-                  <Image
-                    src={preview}
-                    alt="Preview"
-                    fill
-                    className="object-cover rounded"
-                  />
-                </div>
-              )}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <div className="flex gap-2">
           <Button type="submit">
@@ -408,7 +322,7 @@ export default function SanPhamForm({
               onClick={() => {
                 onSucces?.();
                 form.reset();
-                setPreview(null);
+                // setPreview(null);
               }}
             >
               Hủy chỉnh sửa

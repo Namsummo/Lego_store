@@ -1,5 +1,8 @@
-import { SanPham } from "@/components/types/product.type";
 import { Button } from "@/components/ui/button";
+import { Edit, Eye, Trash2 } from "lucide-react";
+import { useBoSuutap } from "@/hooks/useBoSutap";
+import { useDanhMuc } from "@/hooks/useDanhMuc";
+import { SanPham } from "@/components/types/product.type";
 import {
   Table,
   TableBody,
@@ -8,10 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useBoSuutap } from "@/hooks/useBoSutap";
-import { useDanhMuc } from "@/hooks/useDanhMuc";
-import { Edit, Trash2 } from "lucide-react";
-import Image from "next/image";
+import AnhSanPhamManager from "./AnhSanPhamManager";
 
 interface Props {
   sanPhams: SanPham[];
@@ -23,16 +23,6 @@ export default function SanPhamTable({ sanPhams, onDelete, onEdit }: Props) {
   const { data: danhMucs = [] } = useDanhMuc();
   const { data: boSuuTaps = [] } = useBoSuutap();
 
-  const isValidUrl = (url?: string | null): boolean => {
-    if (!url || url.trim() === "") return false;
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   const getTenDanhMuc = (id: number) =>
     danhMucs.find((dm) => dm.id === id)?.tenDanhMuc || "Không rõ";
 
@@ -40,7 +30,7 @@ export default function SanPhamTable({ sanPhams, onDelete, onEdit }: Props) {
     boSuuTaps.find((bst) => bst.id === id)?.tenBoSuuTap || "Không rõ";
 
   return (
-    <Table className="border-3 border-blue-900 ">
+    <Table className="border-3 border-blue-900">
       <TableHeader>
         <TableRow>
           <TableHead>STT</TableHead>
@@ -54,7 +44,6 @@ export default function SanPhamTable({ sanPhams, onDelete, onEdit }: Props) {
           <TableHead>Số lượng tồn</TableHead>
           <TableHead>Số lượng mảnh ghép</TableHead>
           <TableHead>Trạng Thái</TableHead>
-          <TableHead>Ảnh đại diện</TableHead>
           <TableHead>Hành động</TableHead>
         </TableRow>
       </TableHeader>
@@ -84,23 +73,29 @@ export default function SanPhamTable({ sanPhams, onDelete, onEdit }: Props) {
               <TableCell>{sanPham.gia}</TableCell>
               <TableCell>{sanPham.soLuongTon}</TableCell>
               <TableCell>{sanPham.soLuongManhGhep}</TableCell>
-              <TableCell>{sanPham.trangThai}</TableCell>
               <TableCell>
-                {isValidUrl(sanPham.anhDaiDien) ? (
-                  <div className="w-16 h-16 relative">
-                    <Image
-                      src={sanPham.anhDaiDien!}
-                      alt={sanPham.tenSanPham}
-                      fill
-                      className="object-cover rounded"
-                    />
-                  </div>
+                {sanPham.trangThai === "Đang kinh doanh" ? (
+                  <span className="text-green-600 font-semibold">
+                    Đang kinh doanh
+                  </span>
                 ) : (
-                  "Không có ảnh"
+                  <span className="text-red-300 font-semibold">
+                    Ngừng kinh doanh
+                  </span>
                 )}
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">
+                  <AnhSanPhamManager
+                    sanPhamId={sanPham.id}
+                    maSanPham={sanPham.maSanPham ?? ""}
+                    tenSanPham={sanPham.tenSanPham}
+                    trigger={
+                      <Button title="Ảnh sản phẩm">
+                        <Eye className="size-4 text-black" />
+                      </Button>
+                    }
+                  />
                   <Button onClick={() => onEdit(sanPham)} title="Chỉnh sửa">
                     <Edit className="w-4 h-4 text-blue-500" />
                   </Button>

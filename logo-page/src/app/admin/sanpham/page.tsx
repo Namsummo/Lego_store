@@ -10,7 +10,7 @@ import {
   useEditSanPham,
 } from "@/hooks/useSanPham";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SanPham } from "@/components/types/product.type";
 import SanPhamFilter from "./SanPhamFilter";
 import { useSearchStore } from "@/context/useSearch.store";
@@ -33,6 +33,9 @@ export default function SanPhamPage() {
   const addSanPhamMutation = useAddSanPham();
   const deleteSanPhamMutation = useXoaSanPham();
   const editSanPhamMutation = useEditSanPham();
+  useEffect(() => {
+    console.log("edit id:", editSanPham?.id);
+  }, [editSanPham]);
 
   // Filter logic
   const filteredSanPhams = sanPhams.filter((sp) => {
@@ -117,7 +120,7 @@ export default function SanPhamPage() {
           <SanPhamTable
             sanPhams={paginatedSanPhams}
             onDelete={handleDelete}
-            onEdit={(product) => setEditSanPham(product)}
+            onEdit={(product) => setEditSanPham({ ...product })}
           />
           <div className="flex gap-2 items-center justify-center">
             <Button

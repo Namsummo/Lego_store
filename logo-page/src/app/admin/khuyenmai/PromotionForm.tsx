@@ -18,13 +18,7 @@ import { CalendarIcon, InfoIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { useSanPham } from "@/hooks/useSanPham";
 
 interface PromotionFormProps {
@@ -46,8 +40,6 @@ const PromotionForm: React.FC<PromotionFormProps> = ({
   onCancel,
   getStatus,
 }) => {
-  const { data: products, isLoading: isLoadingProducts } = useSanPham();
-
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "Đang hoạt động":
@@ -158,7 +150,7 @@ const PromotionForm: React.FC<PromotionFormProps> = ({
 
       <form onSubmit={onSubmit} className="space-y-8">
         {/* Mã khuyến mãi */}
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label
             htmlFor="maKhuyenMai"
             className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center"
@@ -177,11 +169,11 @@ const PromotionForm: React.FC<PromotionFormProps> = ({
             style={{ color: "#000000 !important" }}
             placeholder="Nhập mã khuyến mãi"
           />
-        </div>
+        </div> */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           {/* Số lượng */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label
               htmlFor="soLuong"
               className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center"
@@ -200,10 +192,10 @@ const PromotionForm: React.FC<PromotionFormProps> = ({
               style={{ color: "#000000 !important" }}
               placeholder="Nhập số lượng"
             />
-          </div>
+          </div> */}
 
           {/* Giá trị giảm */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label
               htmlFor="giaTriGiam"
               className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center"
@@ -222,10 +214,10 @@ const PromotionForm: React.FC<PromotionFormProps> = ({
               style={{ color: "#000000 !important" }}
               placeholder="Nhập giá trị giảm"
             />
-          </div>
+          </div> */}
 
           {/* Giá trị tối đa */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label
               htmlFor="giaTriToiDa"
               className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center"
@@ -243,30 +235,7 @@ const PromotionForm: React.FC<PromotionFormProps> = ({
               style={{ color: "#000000 !important" }}
               placeholder="Nhập giá trị tối đa"
             />
-          </div>
-
-          {/* Phần trăm giảm */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="phanTramGiam"
-              className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center"
-            >
-              Phần trăm giảm (%) <span className="text-red-500 ml-1">*</span>
-            </Label>
-            <Input
-              id="phanTramGiam"
-              name="phanTramGiam"
-              type="number"
-              min="0"
-              max="100"
-              value={newPromotion.phanTramGiam}
-              onChange={onInputChange}
-              required
-              className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 text-black dark:text-white bg-white dark:bg-gray-700 rounded-md h-10"
-              style={{ color: "#000000 !important" }}
-              placeholder="Nhập phần trăm giảm"
-            />
-          </div>
+          </div> */}
 
           {/* Ngày bắt đầu với date picker */}
           <div className="space-y-2">
@@ -370,6 +339,29 @@ const PromotionForm: React.FC<PromotionFormProps> = ({
               required
             />
           </div>
+
+          {/* Phần trăm giảm */}
+          <div className="space-y-2">
+            <Label
+              htmlFor="phanTramGiam"
+              className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center"
+            >
+              Phần trăm giảm (%) <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <Input
+              id="phanTramGiam"
+              name="phanTramGiam"
+              type="number"
+              min="0"
+              max="100"
+              value={newPromotion.phanTramGiam}
+              onChange={onInputChange}
+              required
+              className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 text-black dark:text-white bg-white dark:bg-gray-700 rounded-md h-10"
+              style={{ color: "#000000 !important" }}
+              placeholder="Nhập phần trăm giảm"
+            />
+          </div>
         </div>
 
         {/* Trạng thái */}
@@ -407,7 +399,7 @@ const PromotionForm: React.FC<PromotionFormProps> = ({
           </p>
         </div>
         {/* Sản phẩm áp dụng */}
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label
             htmlFor="sanPhamApDung"
             className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center"
@@ -475,7 +467,7 @@ const PromotionForm: React.FC<PromotionFormProps> = ({
               Giữ phím Ctrl để chọn nhiều sản phẩm
             </p>
           </div>
-        </div>
+        </div> */}
 
         {/* Mô tả */}
         <div className="space-y-2">

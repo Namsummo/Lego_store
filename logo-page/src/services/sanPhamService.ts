@@ -43,8 +43,8 @@ export const sanPhamService = {
   async addSanPham(data: ProductData): Promise<SanPham> {
     const payload = {
       ...data,
-      danhMuc: { id: data.danhMucId },
-      boSuuTap: { id: data.danhMucId },
+      danhMuc: { id: data.idDanhMuc },
+      boSuuTap: { id: data.idBoSuuTap },
     };
     console.log("Payload gửi đi:", data);
 
@@ -68,8 +68,8 @@ export const sanPhamService = {
   async editSanPham(id: number, data: ProductData): Promise<SanPham> {
     const payload = {
       ...data,
-      danhMuc: { id: data.danhMucId },
-      boSuuTap: { id: data.boSuuTapId },
+      danhMuc: { id: data.idDanhMuc },
+      boSuuTap: { id: data.idBoSuuTap },
     };
     try {
       const res = await fetch(`${API_URL}/sanpham/Update/${id}`, {
