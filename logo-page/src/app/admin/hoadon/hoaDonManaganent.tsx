@@ -1,27 +1,25 @@
 "use client";
+
 import React, { useState } from "react";
 import { HoaDonService } from "@/services/hoaDonService";
-import { useHoaDonPaging } from "@/hooks/useHoaDon";
 import { HoaDonDTO, TrangThaiHoaDon } from "@/components/types/hoaDon-types";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
-
-import { Document, Packer, Paragraph, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, TextRun } from "docx";
-import { Eye, Search, RotateCcw } from "lucide-react";
-import { Select, SelectContent, SelectItem } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { Document, Packer, Paragraph, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell } from "docx";
+import { Eye } from "lucide-react";
+import HoaDonDetail from "./hoaDondetail";
+import HoaDonFilter from "./hoaDonFilter";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const PAGE_SIZE = 10;
-
-// Hàm đổi màu trạng thái
 const getStatusColor = (status: string) => {
     switch (status) {
         case TrangThaiHoaDon.PENDING:
             return "bg-yellow-100 text-yellow-800";
         case TrangThaiHoaDon.PROCESSING:
             return "bg-blue-100 text-blue-800";
-        case TrangThaiHoaDon.SHIPPING:
+        case TrangThaiHoaDon.SHIPPED:
             return "bg-purple-100 text-purple-800";
         case TrangThaiHoaDon.DELIVERED:
             return "bg-green-100 text-green-800";
@@ -46,24 +44,44 @@ function parseBackendDate(date: number[] | Date | string | number | undefined): 
     return null;
 }
 
+const STATUS_OPTIONS = [
+    { value: "PENDING", label: "Đang xử lý" },
+    { value: "PROCESSING", label: "Đang chuẩn bị" },
+    { value: "SHIPPED", label: "Đang giao hàng" },
+    { value: "DELIVERED", label: "Đã giao hàng" },
+    { value: "CANCELLED", label: "Đã hủy" },
+];
+
+function isValidTrangThaiTransition(current: string, next: string): boolean {
+    switch (current) {
+        case "PENDING":
+            return next === "PROCESSING" || next === "CANCELLED";
+        case "PROCESSING":
+            return next === "SHIPPED";
+        case "SHIPPED":
+            return next === "DELIVERED";
+        case "DELIVERED":
+        case "CANCELLED":
+            return false;
+        default:
+            return false;
+    }
+}
+
 const HoaDonManagement: React.FC = () => {
     const [page, setPage] = useState(0);
     const [data, setData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState(false);
     const [error, setError] = useState<any>(null);
-    const { data: pagedData, isLoading: isLoadingPaging, isError: isErrorPaging, error: errorPaging } = useHoaDonPaging(page, PAGE_SIZE);
     const [open, setOpen] = useState(false);
     const [detail, setDetail] = useState<any>(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
     const [chiTietSanPham, setChiTietSanPham] = useState<any[]>([]);
-    const [showFilter, setShowFilter] = useState(false);
     const [filters, setFilters] = useState({
-        ma: "",
-        trangThai: "all",      // <-- mặc định là "all"
-        phuongThuc: "all",     // <-- mặc định là "all"
-        tenNguoiDung: "",
-        sdt: "",
+        keyword: "",
+        trangThai: "all",
+        phuongThuc: "all",
         from: "",
         to: "",
     });
@@ -74,9 +92,7 @@ const HoaDonManagement: React.FC = () => {
         try {
             const data = await HoaDonService.getHoaDonById(id);
             setDetail(data);
-            // Gọi API lấy chi tiết sản phẩm theo id hóa đơn
-            const res = await fetch(`http://localhost:8080/api/lego-store/hoa-don-chi-tiet/hoaDon/${id}`);
-            const chiTiet = await res.json();
+            const chiTiet = await HoaDonService.getChiTietSanPhamByHoaDonId(id);
             setChiTietSanPham(chiTiet);
         } catch (e) {
             setDetail(null);
@@ -240,25 +256,53 @@ const HoaDonManagement: React.FC = () => {
         saveAs(blob, `ChiTietHoaDon_${detail.id}.docx`);
     };
 
+    // Lấy tất cả hóa đơn và lọc phía frontend
     const fetchData = async () => {
-        setIsLoading(true);
+        setIsLoading(false);
         setIsError(false);
         try {
-            // Chuyển "all" thành ""
-            const filtersToSend = {
-                ...filters,
-                trangThai: filters.trangThai === "all" ? "" : filters.trangThai,
-                phuongThuc: filters.phuongThuc === "all" ? "" : filters.phuongThuc,
-            };
-            const params = new URLSearchParams({
-                page: page.toString(),
-                size: PAGE_SIZE.toString(),
-                ...Object.fromEntries(Object.entries(filtersToSend).filter(([_, v]) => v)),
+            // Lấy tất cả hóa đơn (không phân trang backend)
+            const allPaged = await HoaDonService.getPagedHoaDons(0, 1000); // lấy nhiều bản ghi, tuỳ backend
+            let filtered = allPaged.content;
+
+            // Lọc phía frontend
+            if (filters.keyword) {
+                const kw = filters.keyword.toLowerCase();
+                filtered = filtered.filter((hd: any) =>
+                    (hd.id + "").includes(kw) ||
+                    (hd.ten && hd.ten.toLowerCase().includes(kw)) ||
+                    (hd.sdt && hd.sdt.includes(kw))
+                );
+            }
+            if (filters.trangThai && filters.trangThai !== "all") {
+                filtered = filtered.filter((hd: any) => hd.trangThai === filters.trangThai);
+            }
+            if (filters.phuongThuc && filters.phuongThuc !== "all") {
+                filtered = filtered.filter((hd: any) => hd.phuongThucThanhToan === filters.phuongThuc);
+            }
+            if (filters.from) {
+                const fromDate = new Date(filters.from);
+                filtered = filtered.filter((hd: any) => {
+                    const d = parseBackendDate(hd.ngayTao);
+                    return d && d >= fromDate;
+                });
+            }
+            if (filters.to) {
+                const toDate = new Date(filters.to);
+                filtered = filtered.filter((hd: any) => {
+                    const d = parseBackendDate(hd.ngayTao);
+                    return d && d <= toDate;
+                });
+            }
+
+            // Phân trang phía frontend
+            const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+            const content = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+            setData({
+                content,
+                totalPages,
             });
-            const res = await fetch(`http://localhost:8080/api/lego-store/hoa-don/search?${params.toString()}`);
-            if (!res.ok) throw new Error("Lỗi khi tải dữ liệu");
-            const json = await res.json();
-            setData(json);
         } catch (e: any) {
             setIsError(true);
             setError(e);
@@ -269,145 +313,19 @@ const HoaDonManagement: React.FC = () => {
     React.useEffect(() => {
         fetchData();
         // eslint-disable-next-line
-    }, [page]); // chỉ fetch khi đổi trang, KHÔNG fetch khi đổi filters
+    }, [page, filters]); // fetch lại khi đổi trang hoặc đổi filter
 
-    if (isLoading || isLoadingPaging) return <div className="p-4">Đang tải...</div>;
-    if (isError || isErrorPaging) return <div className="p-4 text-red-500">Lỗi: {error?.message}</div>;
+    if (isLoading) return <div className="p-4">Đang tải...</div>;
+    if (isError) return <div className="p-4 text-red-500">Lỗi: {error?.message}</div>;
 
     return (
         <div>
-            {/* Bộ lọc nâng cao */}
-            <div className="flex flex-col ">
-                <Button
-                    variant="outline"
-                    onClick={() => setShowFilter(f => !f)}
-                    className="mb-4"
-                >
-                    {showFilter ? "Ẩn bộ lọc" : "Hiện bộ lọc"}
-                </Button>
-                {showFilter && (
-                    <form
-                        className="w-full bg-[#181e29] rounded-xl shadow-lg p-6 mb-8"
-                        onSubmit={e => {
-                            e.preventDefault();
-                            setPage(0);
-                            fetchData();
-                        }}
-                    >
-                        <div className="mb-2 text-blue-400 font-semibold text-sm">Bộ lọc tìm kiếm nâng cao</div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-200 mb-1">Mã hóa đơn</label>
-                                <Input
-                                    className="w-full bg-[#232b3b] text-white border border-[#2d3748] placeholder-gray-400 focus:border-blue-500"
-                                    placeholder="Nhập mã hóa đơn..."
-                                    value={filters.ma}
-                                    onChange={e => setFilters(f => ({ ...f, ma: e.target.value }))}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-200 mb-1">Trạng thái đơn hàng</label>
-                                <Select
-                                    value={filters.trangThai}
-                                    onValueChange={value => setFilters(f => ({ ...f, trangThai: value }))}
-                                >
-                                    <SelectContent className="bg-[#232b3b] text-white">
-                                        <SelectItem value="all">Tất cả</SelectItem>
-                                        <SelectItem value="PENDING">Chờ xác nhận</SelectItem>
-                                        <SelectItem value="PROCESSING">Đang xử lý</SelectItem>
-                                        <SelectItem value="SHIPPING">Đang giao</SelectItem>
-                                        <SelectItem value="DELIVERED">Đã giao</SelectItem>
-                                        <SelectItem value="CANCELLED">Đã hủy</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-200 mb-1">Phương thức thanh toán</label>
-                                <Select
-                                    value={filters.phuongThuc || "all"}
-                                    onValueChange={value => setFilters(f => ({ ...f, phuongThuc: value === "all" ? "" : value }))}
-                                >
-                                    <SelectContent className="bg-[#232b3b] text-white">
-                                        <SelectItem value="all">Tất cả</SelectItem>
-                                        <SelectItem value="COD">COD</SelectItem>
-                                        <SelectItem value="BANKING">Chuyển khoản</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-200 mb-1">Tên người dùng</label>
-                                <Input
-                                    className="w-full bg-[#232b3b] text-white border border-[#2d3748] placeholder-gray-400 focus:border-blue-500"
-                                    placeholder="Nhập tên người dùng..."
-                                    value={filters.tenNguoiDung}
-                                    onChange={e => setFilters(f => ({ ...f, tenNguoiDung: e.target.value }))}
-                                />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-200 mb-1">Số điện thoại</label>
-                                <Input
-                                    className="w-full bg-[#232b3b] text-white border border-[#2d3748] placeholder-gray-400 focus:border-blue-500"
-                                    placeholder="Nhập số điện thoại..."
-                                    value={filters.sdt}
-                                    onChange={e => setFilters(f => ({ ...f, sdt: e.target.value }))}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-200 mb-1">Từ ngày</label>
-                                <Input
-                                    type="datetime-local"
-                                    className="w-full bg-[#232b3b] text-white border border-[#2d3748] focus:border-blue-500"
-                                    value={filters.from}
-                                    onChange={e => setFilters(f => ({ ...f, from: e.target.value }))}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-200 mb-1">Đến ngày</label>
-                                <Input
-                                    type="datetime-local"
-                                    className="w-full bg-[#232b3b] text-white border border-[#2d3748] focus:border-blue-500"
-                                    value={filters.to}
-                                    onChange={e => setFilters(f => ({ ...f, to: e.target.value }))}
-                                />
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    type="submit"
-                                    size="icon"
-                                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg w-11 h-11 flex items-center justify-center"
-                                    aria-label="Tìm kiếm"
-                                >
-                                    <Search className="w-6 h-6" />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="secondary"
-                                    className="bg-[#232b3b] text-white border border-[#2d3748] hover:bg-[#2d3748] rounded-lg w-11 h-11 flex items-center justify-center"
-                                    aria-label="Reset bộ lọc"
-                                    onClick={() => {
-                                        setFilters({
-                                            ma: "",
-                                            trangThai: "",
-                                            phuongThuc: "",
-                                            tenNguoiDung: "",
-                                            sdt: "",
-                                            from: "",
-                                            to: "",
-                                        });
-                                        setPage(0);
-                                        fetchData();
-                                    }}
-                                >
-                                    <RotateCcw className="w-6 h-6" />
-                                </Button>
-                            </div>
-                        </div>
-                    </form>
-                )}
-            </div>
+            <HoaDonFilter
+                filters={filters}
+                setFilters={setFilters}
+                fetchData={fetchData}
+                setPage={setPage}
+            />
             <h5 className="text-2xl font-bold mb-6 text-white">Trang hiển thị danh sách hóa đơn</h5>
             <div className="rounded-lg shadow overflow-x-auto bg-[#181e29]">
                 <Table>
@@ -439,9 +357,44 @@ const HoaDonManagement: React.FC = () => {
                                         : ""}
                                 </TableCell>
                                 <TableCell>
-                                    <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(hd.trangThai)}`}>
-                                        {hd.trangThai}
-                                    </span>
+                                    <Select
+                                        value={hd.trangThai}
+                                        onValueChange={async (value) => {
+                                            if (!isValidTrangThaiTransition(hd.trangThai, value)) return;
+                                            try {
+                                                await HoaDonService.updateTrangThai(hd.id, value);
+                                                fetchData(); // reload lại danh sách
+                                            } catch (e) {
+                                                alert("Cập nhật trạng thái thất bại!");
+                                            }
+                                        }}
+                                    >
+                                        <SelectTrigger className="w-32 bg-white/10 border border-blue-400 text-black rounded-lg text-xs font-semibold">
+                                            <SelectValue>
+                                                {hd.trangThai}
+                                            </SelectValue>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {STATUS_OPTIONS.map((st) => (
+                                                <SelectItem
+                                                    key={st.value}
+                                                    value={st.value}
+                                                    disabled={
+                                                        st.value === hd.trangThai ||
+                                                        !isValidTrangThaiTransition(hd.trangThai, st.value)
+                                                    }
+                                                    className={
+                                                        st.value === hd.trangThai ||
+                                                            !isValidTrangThaiTransition(hd.trangThai, st.value)
+                                                            ? "opacity-50 pointer-events-none"
+                                                            : ""
+                                                    }
+                                                >
+                                                    {st.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </TableCell>
                                 <TableCell>{hd.phuongThucThanhToan}</TableCell>
                                 <TableCell>
@@ -479,126 +432,15 @@ const HoaDonManagement: React.FC = () => {
                     Trang sau
                 </Button>
             </div>
-            {/* Modal chi tiết hóa đơn */}
-            {open && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl p-10 w-[1100px] max-h-[95vh] overflow-y-auto relative text-black border-2 border-blue-200">
-                        <button
-                            className="absolute top-4 right-6 text-2xl text-gray-400 hover:text-red-500 transition"
-                            onClick={() => setOpen(false)}
-                            aria-label="Đóng"
-                        >
-                            ×
-                        </button>
-                        {loadingDetail ? (
-                            <div className="text-center text-lg py-10">Đang tải chi tiết...</div>
-                        ) : detail ? (
-                            <div>
-                                <h3 className="text-2xl font-extrabold mb-6 text-blue-700 text-center tracking-wide">
-                                    Chi tiết hóa đơn #{detail.id}
-                                </h3>
-                                <div className="grid grid-cols-2 gap-8 mb-8">
-                                    <div className="space-y-2">
-                                        <div><b>Mã hóa đơn:</b> <span className="font-semibold">{detail.id}</span></div>
-                                        <div>
-                                            <b>Ngày tạo:</b>{" "}
-                                            <span>
-                                                {detail.ngayTao
-                                                    ? (() => {
-                                                        const d = parseBackendDate(detail.ngayTao);
-                                                        return d ? d.toLocaleString("vi-VN") : "";
-                                                    })()
-                                                    : ""}
-                                            </span>
-                                        </div>
-                                        <div><b>Trạng thái:</b> <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(detail.trangThai)}`}>{detail.trangThai}</span></div>
-                                        <div><b>Phương thức thanh toán:</b> {detail.phuongThucThanhToan}</div>
-                                        <div><b>Tạm tính:</b> <span className="text-blue-700">{detail.tamTinh?.toLocaleString()}₫</span></div>
-                                        <div><b>Giảm giá:</b> <span className="text-yellow-700">{detail.soTienGiam?.toLocaleString()}₫</span></div>
-                                        <div><b>Tổng tiền:</b> <span className="text-green-700 font-bold">{detail.tongTien?.toLocaleString()}₫</span></div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div><b>Tên khách hàng:</b> {detail.ten}</div>
-                                        <div><b>Số điện thoại:</b> {detail.sdt}</div>
-                                        <div><b>Địa chỉ giao hàng:</b> {detail.diaChiGiaoHang}</div>
-                                        <div><b>ID người dùng:</b> {detail.userId}</div>
-                                    </div>
-                                </div>
-                                <div className="flex justify-end gap-6 mb-6">
-                                    <Button
-                                        onClick={exportExcel}
-                                        className="flex items-center gap-2 bg-gradient-to-r from-green-400 to-blue-500 text-white font-semibold px-6 py-2 rounded-lg shadow hover:from-green-500 hover:to-blue-600 transition"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 16v2a2 2 0 002 2H6a2 2 0 01-2-2v-2m12-4l-4 4m0 0l-4-4m4 4V4" />
-                                        </svg>
-                                        Xuất Excel
-                                    </Button>
-                                    <Button
-                                        onClick={exportDocx}
-                                        className="flex items-center gap-2 bg-gradient-to-r from-indigo-400 to-purple-500 text-white font-semibold px-6 py-2 rounded-lg shadow hover:from-indigo-500 hover:to-purple-600 transition"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Xuất Docx
-                                    </Button>
-                                </div>
-                                <div>
-                                    <b className="block mb-2 text-lg text-blue-700">Chi tiết sản phẩm:</b>
-                                    <table className="w-full border mt-2 text-base rounded-lg overflow-hidden shadow">
-                                        <thead>
-                                            <tr className="bg-blue-100 text-blue-900">
-                                                <th className="border px-3 py-2">STT</th>
-                                                <th className="border px-3 py-2">Mã sản phẩm</th>
-                                                <th className="border px-3 py-2">Tên sản phẩm</th>
-                                                <th className="border px-3 py-2">Số lượng</th>
-                                                <th className="border px-3 py-2">Đơn giá</th>
-                                                <th className="border px-3 py-2">Thành tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {chiTietSanPham.map((sp, idx) => (
-                                                <tr key={sp.masp ?? sp.idSanPham ?? idx} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
-                                                    <td className="border px-3 py-2 text-center">{idx + 1}</td>
-                                                    <td className="border px-3 py-2">{sp.masp ?? ""}</td>
-                                                    <td className="border px-3 py-2">{sp.tensp ?? ""}</td>
-                                                    <td className="border px-3 py-2 text-center">{sp.soLuong ?? ""}</td>
-                                                    <td className="border px-3 py-2 text-right">
-                                                        {sp.gia !== undefined && sp.gia !== null
-                                                            ? Number(sp.gia).toLocaleString() + "₫"
-                                                            : ""}
-                                                    </td>
-                                                    <td className="border px-3 py-2 text-right">
-                                                        {sp.tongTien !== undefined && sp.tongTien !== null
-                                                            ? Number(sp.tongTien).toLocaleString() + "₫"
-                                                            : ""}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {/* Dòng tổng kết */}
-                                            <tr className="bg-blue-50 font-semibold">
-                                                <td colSpan={5} className="border px-3 py-2 text-right">Tạm tính:</td>
-                                                <td className="border px-3 py-2 text-right">{detail.tamTinh?.toLocaleString()}₫</td>
-                                            </tr>
-                                            <tr className="bg-yellow-50 font-semibold">
-                                                <td colSpan={5} className="border px-3 py-2 text-right">Giảm giá:</td>
-                                                <td className="border px-3 py-2 text-right">{detail.soTienGiam?.toLocaleString()}₫</td>
-                                            </tr>
-                                            <tr className="bg-green-50 font-bold">
-                                                <td colSpan={5} className="border px-3 py-2 text-right">Tổng cộng:</td>
-                                                <td className="border px-3 py-2 text-right">{detail.tongTien?.toLocaleString()}₫</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-red-500 text-center text-lg py-10">Không tìm thấy chi tiết hóa đơn.</div>
-                        )}
-                    </div>
-                </div>
-            )}
+            <HoaDonDetail
+                open={open}
+                onClose={() => setOpen(false)}
+                detail={detail}
+                loadingDetail={loadingDetail}
+                chiTietSanPham={chiTietSanPham}
+                exportExcel={exportExcel}
+                exportDocx={exportDocx}
+            />
         </div>
     );
 };
@@ -608,4 +450,3 @@ export default HoaDonManagement;
 function saveAs(blob: Blob, arg1: string) {
     throw new Error("Function not implemented.");
 }
-

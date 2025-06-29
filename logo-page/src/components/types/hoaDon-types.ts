@@ -1,6 +1,3 @@
-import { SanPham } from "./product.type";
-
-
 
 export interface HoaDonDTO {
     id: number;
@@ -21,13 +18,11 @@ export interface HoaDonDTO {
     maPGG?: string;
 }
 export enum TrangThaiHoaDon {
-    PENDING = "Pending",
-    PROCESSING = "Processing",
-    SHIPPING = "Shipping",
-    DELIVERED = "Delivered",
-    CANCELLED = "Cancelled",
-    RETURNING = "Returning",
-    REFUNDED = "Refunded",
+    PENDING = "PENDING",
+    PROCESSING = "PROCESSING",
+    SHIPPED = "SHIPPED",
+    DELIVERED = "DELIVERED",
+    CANCELLED = "CANCELLED"
 }
 
 export enum PaymentMethods {

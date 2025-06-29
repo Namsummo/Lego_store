@@ -1,7 +1,7 @@
 // src/components/hoa-don/HoaDonList.tsx
 import React, { useState } from 'react';
 
-import {  HoaDonDTO } from '@/components/types/hoaDon-types';
+import { HoaDonDTO } from '@/components/types/hoaDon-types';
 import { useHoaDonPaging } from '@/hooks/useHoaDon';
 
 export default function HoaDonList() {
@@ -27,11 +27,11 @@ export default function HoaDonList() {
                     </tr>
                 </thead>
                 <tbody>
-                    {data?.content.map((hd: HoaDonDTO) => (
-                        <tr key={hd.idHoaDon} className="hover:bg-gray-50">
-                            <td className="p-2 border">{hd.idHoaDon}</td> {/* Sửa lại đúng mã hóa đơn */}
+                    {(Array.isArray(data) ? data : Array.isArray((data as any)?.items) ? (data as any).items : [])?.map((hd: HoaDonDTO) => (
+                        <tr key={hd.id} className="hover:bg-gray-50">
+                            <td className="p-2 border">{hd.id}</td> {/* Sửa lại đúng mã hóa đơn */}
                             <td className="p-2 border">{hd.trangThai}</td>
-                            <td className="p-2 border">{hd.tennd}</td>
+                            <td className="p-2 border">{hd.ten}</td>
                             <td className="p-2 border">{hd.tongTien?.toLocaleString()} ₫</td>
                             <td className="p-2 border">{new Date(hd.ngayTao).toLocaleString()}</td>
                         </tr>
@@ -48,11 +48,11 @@ export default function HoaDonList() {
                     Trang trước
                 </button>
                 <span>
-                    Trang {page + 1} / {data?.totalPages ?? 1}
+                    Trang {page + 1} / {typeof data === 'object' && data !== null && 'totalPages' in data ? (data as any).totalPages : 1}
                 </span>
                 <button
                     onClick={() => setPage((p) => p + 1)}
-                    disabled={page + 1 >= (data?.totalPages ?? 0)}
+                    disabled={page + 1 >= (typeof data === 'object' && data !== null && 'totalPages' in data ? (data as any).totalPages : 1)}
                     className="px-3 py-1 bg-blue-500 text-white rounded disabled:opacity-50"
                 >
                     Trang sau
