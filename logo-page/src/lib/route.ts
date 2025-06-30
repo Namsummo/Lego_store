@@ -1,3 +1,5 @@
+
+
 export const adminRoutes = [
   { label: "Thống kê", href: "/admin/thongke", icon: "layout-dashboard" },
   {
@@ -9,7 +11,13 @@ export const adminRoutes = [
       { label: "Bộ sưu tập", href: "/admin/bosuutap" },
     ],
   },
-  { label: "Quản lý hóa Đơn", href: "/admin/hoadon", icon: "shopping-cart" },
+  {
+    label: "Quản lý hóa Đơn", icon: "shopping-cart",
+    children: [
+      { label: "Hóa đơn", href: "/admin/hoadon" },
+      { label: "Trạng thái hóa đơn", href: "/admin/trangthaihoadon" }
+    ]
+  },
   {
     label: "Khuyến mãi",
     icon: "tag",
