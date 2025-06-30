@@ -18,7 +18,7 @@ export interface BoSuuTap {
   tenBoSuuTap: string;
   moTa: string;
   namPhatHanh: number;
-  ngayTao: number;
+  ngayTao?: string;
 }
 
 export interface SanPham {

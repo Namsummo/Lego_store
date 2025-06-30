@@ -1,39 +1,56 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/context/use-toast'; // Sử dụng useToast từ context
-import { useLocalStorage } from '@/context/useLocalStorage'; // Giả sử đường dẫn đúng
-import AccountForm from './AccountForm'; // Sử dụng đường dẫn tương đối
-import AccountTable from './AccountTable'; // Sử dụng đường dẫn tương đối
-import StatsCard from './StatsCard';     // Sử dụng đường dẫn tương đối
-import { Users, UserCheck, Search, Plus, Building, Phone, Mail, TrendingUp } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { ToastProvider } from '@/components/ui/toast-provider'; // Import ToastProvider
-import { Account } from '@/components/types/account.type';
+import React, { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/context/use-toast"; // Sử dụng useToast từ context
+import { useLocalStorage } from "@/context/useLocalStorage"; // Giả sử đường dẫn đúng
+import AccountForm from "./AccountForm"; // Sử dụng đường dẫn tương đối
+import AccountTable from "./AccountTable"; // Sử dụng đường dẫn tương đối
+import StatsCard from "./StatsCard"; // Sử dụng đường dẫn tương đối
+import {
+  Users,
+  UserCheck,
+  Search,
+  Plus,
+  Building,
+  Phone,
+  Mail,
+  TrendingUp,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { ToastProvider } from "@/components/ui/toast-provider"; // Import ToastProvider
+import { Account } from "@/components/types/account.type";
 
 function UserManagementContent() {
-  const [employees, setEmployees] = useLocalStorage('employees', []);
-  const [customers, setCustomers] = useLocalStorage('customers', []);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [employees, setEmployees] = useLocalStorage("employees", []);
+  const [customers, setCustomers] = useLocalStorage("customers", []);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
-  const [currentTab, setCurrentTab] = useState('employees');
+  const [currentTab, setCurrentTab] = useState("employees");
 
   const { toast } = useToast(); // Gọi hook useToast
 
   const handleSaveAccount = (accountData: Account) => {
-    if (currentTab === 'employees') {
+    if (currentTab === "employees") {
       if (editingAccount) {
-        setEmployees((prev: Account[]) => prev.map((emp: Account) => (emp.id === editingAccount!.id ? accountData : emp)));
+        setEmployees((prev: Account[]) =>
+          prev.map((emp: Account) =>
+            emp.id === editingAccount!.id ? accountData : emp
+          )
+        );
       } else {
         setEmployees((prev: Account[]) => [...prev, accountData]);
       }
     } else {
       if (editingAccount) {
-        setCustomers((prev: Account[]) => prev.map((cust: Account) => (cust.id === editingAccount!.id ? accountData : cust)));
+        setCustomers((prev: Account[]) =>
+          prev.map((cust: Account) =>
+            cust.id === editingAccount!.id ? accountData : cust
+          )
+        );
       } else {
         setCustomers((prev: Account[]) => [...prev, accountData]);
       }
@@ -47,15 +64,19 @@ function UserManagementContent() {
   };
 
   const handleDeleteAccount = (accountId: string) => {
-    if (currentTab === 'employees') {
-      setEmployees((prev: Account[]) => prev.filter((emp: Account) => emp.id !== accountId));
+    if (currentTab === "employees") {
+      setEmployees((prev: Account[]) =>
+        prev.filter((emp: Account) => emp.id !== accountId)
+      );
     } else {
-      setCustomers((prev: Account[]) => prev.filter((cust: Account) => cust.id !== accountId));
+      setCustomers((prev: Account[]) =>
+        prev.filter((cust: Account) => cust.id !== accountId)
+      );
     }
-    
+
     toast({
       message: "Tài khoản đã được xóa thành công!",
-      type: "success" // Hoặc "error" nếu có lỗi, "destructive" không phải là type chuẩn của context
+      type: "success", // Hoặc "error" nếu có lỗi, "destructive" không phải là type chuẩn của context
     });
   };
 
@@ -66,15 +87,18 @@ function UserManagementContent() {
 
   const filterAccounts = (accounts: Account[]): Account[] => {
     if (!searchTerm) return accounts;
-    return accounts.filter(account =>
-      account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      account.role.toLowerCase().includes(searchTerm.toLowerCase())
+    return accounts.filter(
+      (account) =>
+        account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        account.role.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
-  const getActiveEmployees = (): number => employees.filter((emp: Account) => emp.status === 'Hoạt động').length;
-  const getActiveCustomers = (): number => customers.filter((cust: Account) => cust.status === 'Hoạt động').length;
+  const getActiveEmployees = (): number =>
+    employees.filter((emp: Account) => emp.status === "Hoạt động").length;
+  const getActiveCustomers = (): number =>
+    customers.filter((cust: Account) => cust.status === "Hoạt động").length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -137,14 +161,24 @@ function UserManagementContent() {
           transition={{ delay: 0.4 }}
           className="glass-effect rounded-2xl p-6 border border-blue-500/20"
         >
-          <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+          <Tabs
+            value={currentTab}
+            onValueChange={setCurrentTab}
+            className="w-full"
+          >
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 space-y-4 lg:space-y-0">
               <TabsList className="bg-slate-800/50 border border-blue-500/20">
-                <TabsTrigger value="employees" className="data-[state=active]:bg-blue-600">
+                <TabsTrigger
+                  value="employees"
+                  className="data-[state=active]:bg-blue-600"
+                >
                   <Users className="h-4 w-4 mr-2" />
                   Nhân viên
                 </TabsTrigger>
-                <TabsTrigger value="customers" className="data-[state=active]:bg-purple-600">
+                <TabsTrigger
+                  value="customers"
+                  className="data-[state=active]:bg-purple-600"
+                >
                   <Building className="h-4 w-4 mr-2" />
                   Khách hàng
                 </TabsTrigger>
@@ -199,7 +233,7 @@ function UserManagementContent() {
           }}
           account={editingAccount}
           onSave={handleSaveAccount}
-          type={currentTab === 'employees' ? 'employee' : 'customer'}
+          type={currentTab === "employees" ? "employee" : "customer"}
         />
       </div>
     </div>

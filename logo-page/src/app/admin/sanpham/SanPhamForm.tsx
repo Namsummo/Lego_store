@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { motion } from "framer-motion";
 
 import { productSchema, ProductData } from "@/lib/sanphamschema";
 import { SanPham } from "@/components/types/product.type";
@@ -45,12 +46,11 @@ export default function SanPhamForm({
     defaultValues: {
       tenSanPham: "",
       moTa: "",
-      idDanhMuc: undefined,
-      idBoSuuTap: undefined,
+      danhMucId: undefined,
+      boSuuTapId: undefined,
       gia: 1000,
       doTuoi: undefined,
       trangThai: "Đang kinh doanh",
-      // anhDaiDien: "",
       soLuongTon: undefined,
       soLuongManhGhep: undefined,
     },
@@ -65,8 +65,8 @@ export default function SanPhamForm({
       form.reset({
         tenSanPham: edittingSanPham.tenSanPham,
         moTa: edittingSanPham.moTa ?? "",
-        idDanhMuc: edittingSanPham.idDanhMuc,
-        idBoSuuTap: edittingSanPham.idBoSuuTap,
+        danhMucId: edittingSanPham.idDanhMuc,
+        boSuuTapId: edittingSanPham.idBoSuuTap,
         soLuongTon: edittingSanPham.soLuongTon,
         gia: edittingSanPham.gia,
         doTuoi: edittingSanPham.doTuoi,
@@ -95,13 +95,17 @@ export default function SanPhamForm({
 
   return (
     <Form {...form}>
-      <form
+      <motion.form
         onSubmit={form.handleSubmit(async (data) => {
           console.log("Submit update:", data, edittingSanPham?.id);
           await onSubmit(data, edittingSanPham?.id);
           onSucces?.();
         })}
-        className="gap-2 p-2 flex-col flex "
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="glass-card p-6 mb-8 space-y-4 rounded-md border border-white/20 bg-[#10123c]"
       >
         <FormField
           control={form.control}
@@ -139,7 +143,7 @@ export default function SanPhamForm({
           <div className="basis-full sm:basis-1/2 lg:basis-1/3">
             <FormField
               control={form.control}
-              name="idDanhMuc"
+              name="danhMucId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Danh mục</FormLabel>
@@ -169,7 +173,7 @@ export default function SanPhamForm({
           <div className="basis-full sm:basis-1/2 lg:basis-1/3">
             <FormField
               control={form.control}
-              name="idBoSuuTap"
+              name="boSuuTapId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Bộ Sưu Tập</FormLabel>
@@ -329,7 +333,7 @@ export default function SanPhamForm({
             </Button>
           )}
         </div>
-      </form>
+      </motion.form>
     </Form>
   );
 }

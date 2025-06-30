@@ -20,8 +20,8 @@ export const productSchema = z.object({
     .number({ required_error: "Độ tuổi là bắt buộc" })
     .min(6, "Tuổi phải lớn hơn hoặc bằng 6 và nhỏ hơn hoặc bằng 50 ")
     .max(50, "Tuổi phải lớn hơn hoặc bằng 6 và nhỏ hơn hoặc bằng 50 "),
-  idDanhMuc: z.number({ required_error: "Danh mục là bắt buộc" }),
-  idBoSuuTap: z.number({ required_error: "Bộ sưu tập là bắt buộc" }),
+  danhMucId: z.number({ required_error: "Danh mục là bắt buộc" }),
+  boSuuTapId: z.number({ required_error: "Bộ sưu tập là bắt buộc" }),
 });
 
 export const anhSanPhamSchema = z.object({

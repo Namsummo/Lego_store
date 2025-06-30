@@ -1,11 +1,12 @@
 export interface KhuyenMaiDTO {
+  id: number;
   maKhuyenMai?: string;
   tenKhuyenMai: string;
   phanTramKhuyenMai: number;
-  ngayBatDau: string; // ISO hoặc "dd-MM-yyyy HH:mm:ss"
+  ngayBatDau: string;
   ngayKetThuc: string;
   ngayTao?: string;
-  trangThai?: string;
+  trangThai: string;
 }
 
 export interface KhuyenMaiSanPhamDTO {
@@ -13,8 +14,7 @@ export interface KhuyenMaiSanPhamDTO {
   listSanPhamId: number[];
 }
 
-// SanPhamKMResponse.ts
-export interface SanPhamKMResponse {
+export interface KhuyenMaiTheoSanPham {
   id: number;
   tenSanPham: string;
   maSanPham: string;
