@@ -1,3 +1,7 @@
+import { Button } from "@/components/ui/button";
+import { Edit, Eye, Trash2 } from "lucide-react";
+import { useBoSuutap } from "@/hooks/useBoSutap";
+import { useDanhMuc } from "@/hooks/useDanhMuc";
 import { SanPham } from "@/components/types/product.type";
 import {
   Table,
@@ -7,10 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useBoSuutap } from "@/hooks/useBoSutap";
-import { useDanhMuc } from "@/hooks/useDanhMuc";
-import { Edit, Trash2 } from "lucide-react";
-import Image from "next/image";
+import AnhSanPhamManager from "./AnhSanPhamManager";
 
 interface Props {
   sanPhams: SanPham[];
@@ -22,16 +23,6 @@ export default function SanPhamTable({ sanPhams, onDelete, onEdit }: Props) {
   const { data: danhMucs = [] } = useDanhMuc();
   const { data: boSuuTaps = [] } = useBoSuutap();
 
-  const isValidUrl = (url?: string | null): boolean => {
-    if (!url || url.trim() === "") return false;
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   const getTenDanhMuc = (id: number) =>
     danhMucs.find((dm) => dm.id === id)?.tenDanhMuc || "Không rõ";
 
@@ -39,71 +30,86 @@ export default function SanPhamTable({ sanPhams, onDelete, onEdit }: Props) {
     boSuuTaps.find((bst) => bst.id === id)?.tenBoSuuTap || "Không rõ";
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>STT</TableHead>
-          <TableHead>Mã sản phẩm</TableHead>
-          <TableHead>Tên sản phẩm</TableHead>
-          <TableHead>Mô tả</TableHead>
-          <TableHead>Danh mục</TableHead>
-          <TableHead>Bộ sưu tập</TableHead>
-          <TableHead>Giá</TableHead>
-          <TableHead>Số lượng tồn</TableHead>
-          <TableHead>Số lượng mảnh ghép</TableHead>
-          <TableHead>Trạng Thái</TableHead>
-          <TableHead>Ảnh đại diện</TableHead>
-          <TableHead>Hành động</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {sanPhams.length === 0 ? (
+    <div className="border-3 border-blue-900 rounded-2xl ">
+      <Table>
+        <TableHeader>
           <TableRow>
-            <TableCell colSpan={10} className="text-center">
-              Không có sản phẩm nào
-            </TableCell>
+            <TableHead>STT</TableHead>
+            <TableHead>Mã sản phẩm</TableHead>
+            <TableHead>Tên sản phẩm</TableHead>
+            <TableHead>Mô tả</TableHead>
+            <TableHead>Danh mục</TableHead>
+            <TableHead>Bộ sưu tập</TableHead>
+            <TableHead>Độ tuổi</TableHead>
+            <TableHead>Giá</TableHead>
+            <TableHead>Số lượng tồn</TableHead>
+            <TableHead>Số lượng mảnh ghép</TableHead>
+            <TableHead>Trạng Thái</TableHead>
+            <TableHead>Hành động</TableHead>
           </TableRow>
-        ) : (
-          sanPhams.map((sanPham, index) => (
-            <TableRow key={sanPham.id}>
-              <TableCell>{index + 1}</TableCell>
-              <TableCell>{sanPham.maSanPham}</TableCell>
-              <TableCell>{sanPham.tenSanPham}</TableCell>
-              <TableCell>{sanPham.moTa}</TableCell>
-              <TableCell>{getTenDanhMuc(sanPham.idDanhMuc)}</TableCell>
-              <TableCell>{getTenBST(sanPham.idBoSuuTap)}</TableCell>
-              <TableCell>{sanPham.gia}</TableCell>
-              <TableCell>{sanPham.soLuongTon}</TableCell>
-              <TableCell>{sanPham.soLuongManhGhep}</TableCell>
-              <TableCell>{sanPham.trangThai}</TableCell>
-              <TableCell>
-                {isValidUrl(sanPham.anhDaiDien) ? (
-                  <div className="w-16 h-16 relative">
-                    <Image
-                      src={sanPham.anhDaiDien!}
-                      alt={sanPham.tenSanPham}
-                      fill
-                      className="object-cover rounded"
-                    />
-                  </div>
-                ) : (
-                  "Không có ảnh"
-                )}
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  <button onClick={() => onEdit(sanPham)} title="Chỉnh sửa">
-                    <Edit className="w-4 h-4 text-yellow-500" />
-                  </button>
-                  <button onClick={() => onDelete(sanPham.id)} title="Xóa">
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
-                </div>
+        </TableHeader>
+        <TableBody>
+          {sanPhams.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={10} className="text-center">
+                Không có sản phẩm nào
               </TableCell>
             </TableRow>
-          ))
-        )}
-      </TableBody>
-    </Table>
+          ) : (
+            sanPhams.map((sanPham, index) => (
+              <TableRow key={sanPham.id}>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>{sanPham.maSanPham}</TableCell>
+                <TableCell>{sanPham.tenSanPham}</TableCell>
+                <TableCell className="max-w-[170px] truncate">
+                  {sanPham.moTa
+                    ? sanPham.moTa.length > 100
+                      ? sanPham.moTa.slice(0, 100) + "..."
+                      : sanPham.moTa
+                    : ""}
+                </TableCell>
+                <TableCell>{getTenDanhMuc(sanPham.idDanhMuc)}</TableCell>
+                <TableCell>{getTenBST(sanPham.idBoSuuTap)}</TableCell>
+                <TableCell>{sanPham.doTuoi}</TableCell>
+                <TableCell>{sanPham.gia.toLocaleString()}đ</TableCell>
+                <TableCell>{sanPham.soLuongTon}</TableCell>
+                <TableCell>{sanPham.soLuongManhGhep}</TableCell>
+                <TableCell>
+                  {sanPham.trangThai === "Đang kinh doanh" ? (
+                    <span className="text-green-600 font-semibold">
+                      Đang kinh doanh
+                    </span>
+                  ) : (
+                    <span className="text-red-300 font-semibold">
+                      Ngừng kinh doanh
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <AnhSanPhamManager
+                      sanPhamId={sanPham.id}
+                      maSanPham={sanPham.maSanPham ?? ""}
+                      tenSanPham={sanPham.tenSanPham}
+                      trigger={
+                        <Button title="Ảnh sản phẩm">
+                          <Eye className="size-4 text-black" />
+                        </Button>
+                      }
+                    />
+                    <Button onClick={() => onEdit(sanPham)} title="Chỉnh sửa">
+                      <Edit className="w-4 h-4 text-blue-500" />
+                    </Button>
+                    <Button onClick={() => onDelete(sanPham.id)} title="Xóa">
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

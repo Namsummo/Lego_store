@@ -1,4 +1,3 @@
-// SanPhamPage.tsx
 "use client";
 
 import { ProductData } from "@/lib/sanphamschema";
@@ -11,17 +10,52 @@ import {
   useEditSanPham,
 } from "@/hooks/useSanPham";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SanPham } from "@/components/types/product.type";
+import SanPhamFilter from "./SanPhamFilter";
+import { useSearchStore } from "@/context/useSearch.store";
+import { useDanhMuc } from "@/hooks/useDanhMuc";
+import { useBoSuutap } from "@/hooks/useBoSutap";
+import { Button } from "@/components/ui/button";
 
 export default function SanPhamPage() {
   const { data: sanPhams = [], isLoading, refetch } = useSanPham();
+  const { data: danhMucs = [] } = useDanhMuc();
+  const { data: boSuuTaps = [] } = useBoSuutap();
+
   const [editSanPham, setEditSanPham] = useState<SanPham | null>(null);
   const [formKey, setFormKey] = useState(0);
 
   const addSanPhamMutation = useAddSanPham();
   const deleteSanPhamMutation = useXoaSanPham();
   const editSanPhamMutation = useEditSanPham();
+  useEffect(() => {
+    console.log("edit id:", editSanPham?.id);
+  }, [editSanPham]);
+
+  // Filter logic
+  const filteredSanPhams = sanPhams.filter((sp) => {
+    const lowerKeyword = keyword.toLowerCase();
+
+    const matchKeyword =
+      sp.tenSanPham.toLowerCase().includes(lowerKeyword) ||
+      sp.maSanPham?.toLowerCase().includes(lowerKeyword);
+
+    const matchDanhMuc =
+      selectedDanhMuc === null || sp.idDanhMuc === selectedDanhMuc;
+    const matchBoSuuTap =
+      selectedBoSuuTap === null || sp.idBoSuuTap === selectedBoSuuTap;
+
+    return matchKeyword && matchDanhMuc && matchBoSuuTap;
+  });
+
+  // Pagination
+  const itemPerPage = 10;
+  const totalPages = Math.ceil(filteredSanPhams.length / itemPerPage);
+  const paginatedSanPhams = filteredSanPhams.slice(
+    (currentPage - 1) * itemPerPage,
+    currentPage * itemPerPage
+  );
 
   const handleSubmit = async (data: ProductData, id?: number) => {
     try {

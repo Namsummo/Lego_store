@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Edit, Trash2 } from 'lucide-react';
+import React from "react";
+import { motion } from "framer-motion";
+import { Edit, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,8 +10,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { BoSuuTap } from '@/components/types/product.type';
+} from "@/components/ui/table";
+import { BoSuuTap } from "@/components/types/product.type";
+import { formatDateFlexible } from "../khuyenmai/formatDateFlexible";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   collections: BoSuuTap[];
@@ -33,6 +35,7 @@ const LegoCollectionTable: React.FC<Props> = ({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="font-bold">STT</TableHead>
             <TableHead className="font-bold">Tên bộ sưu tập</TableHead>
             <TableHead className="font-bold">Mô tả</TableHead>
             <TableHead className="font-bold">Năm phát hành</TableHead>
@@ -42,28 +45,25 @@ const LegoCollectionTable: React.FC<Props> = ({
         </TableHeader>
 
         <TableBody>
-          {collections.map((c) => (
+          {collections.map((c, index) => (
             <TableRow key={c.id}>
+              <TableCell>{index + 1}</TableCell>
               <TableCell>{c.tenBoSuuTap}</TableCell>
               <TableCell>{c.moTa}</TableCell>
               <TableCell>{c.namPhatHanh}</TableCell>
-              <TableCell>{c.ngayTao}</TableCell>
+              <TableCell>{formatDateFlexible(c.ngayTao)}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => onEdit(c)}
-                    className="hover:opacity-80 transition"
-                    title="Chỉnh sửa"
-                  >
-                    <Edit className="w-4 h-4 text-yellow-500" />
-                  </button>
-                  <button
+                  <Button onClick={() => onEdit(c)} title="Chỉnh sửa">
+                    <Edit className="w-4 h-4 text-blue-500" />
+                  </Button>
+                  <Button
                     onClick={() => onDelete(c.id, c.tenBoSuuTap)}
                     className="hover:opacity-80 transition"
                     title="Xóa"
                   >
                     <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
+                  </Button>
                 </div>
               </TableCell>
             </TableRow>

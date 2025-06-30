@@ -2,6 +2,7 @@
 
 // import { CreateSanPhamDto } from "@/components/types/createSanPham.dto";
 import { SanPham } from "@/components/types/product.type";
+import { ProductData } from "@/lib/sanphamschema";
 
 const API_URL = "http://localhost:8080/api";
 
@@ -39,12 +40,13 @@ export const sanPhamService = {
   },
 
   // Add
-  async addSanPham(data: SanPham): Promise<SanPham> {
+  async addSanPham(data: ProductData): Promise<SanPham> {
     const payload = {
       ...data,
-      danhMuc: { id: data.idDanhMuc },
-      boSuuTap: { id: data.idBoSuuTap },
+      danhMuc: { id: data.danhMucId },
+      boSuuTap: { id: data.boSuuTapId },
     };
+    console.log("Payload gửi đi:", data);
 
     const res = await fetch(`${API_URL}/sanpham/Create`, {
       method: "POST",
@@ -63,11 +65,11 @@ export const sanPhamService = {
   },
 
   // Sửa
-  async editSanPham(id: number, data: SanPham): Promise<SanPham> {
+  async editSanPham(id: number, data: ProductData): Promise<SanPham> {
     const payload = {
       ...data,
-      danhMuc: { id: data.idDanhMuc },
-      boSuuTap: { id: data.idBoSuuTap },
+      danhMuc: { id: data.danhMucId },
+      boSuuTap: { id: data.boSuuTapId },
     };
     try {
       const res = await fetch(`${API_URL}/sanpham/Update/${id}`, {

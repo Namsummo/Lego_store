@@ -1,12 +1,17 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { BoSuuTap } from '@/components/types/product.type';
-import { CalendarDays, CalendarCheck2, Palette, PlusCircle } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { BoSuuTap } from "@/components/types/product.type";
+import {
+  CalendarDays,
+  CalendarCheck2,
+  Palette,
+  PlusCircle,
+} from "lucide-react";
 
 interface Props {
   collectionToEdit: BoSuuTap | null;
@@ -14,10 +19,16 @@ interface Props {
   onClearEdit: () => void;
 }
 
-const LegoCollectionForm: React.FC<Props> = ({ collectionToEdit, onSubmit, onClearEdit }) => {
-  const [tenBoSuuTap, setTenBoSuuTap] = useState('');
-  const [moTa, setMoTa] = useState('');
-  const [namPhatHanh, setNamPhatHanh] = useState<number>(new Date().getFullYear());
+const LegoCollectionForm: React.FC<Props> = ({
+  collectionToEdit,
+  onSubmit,
+  onClearEdit,
+}) => {
+  const [tenBoSuuTap, setTenBoSuuTap] = useState("");
+  const [moTa, setMoTa] = useState("");
+  const [namPhatHanh, setNamPhatHanh] = useState<number>(
+    new Date().getFullYear()
+  );
 
   useEffect(() => {
     if (collectionToEdit) {
@@ -25,8 +36,8 @@ const LegoCollectionForm: React.FC<Props> = ({ collectionToEdit, onSubmit, onCle
       setMoTa(collectionToEdit.moTa);
       setNamPhatHanh(collectionToEdit.namPhatHanh);
     } else {
-      setTenBoSuuTap('');
-      setMoTa('');
+      setTenBoSuuTap("");
+      setMoTa("");
       setNamPhatHanh(new Date().getFullYear());
     }
   }, [collectionToEdit]);
@@ -34,7 +45,7 @@ const LegoCollectionForm: React.FC<Props> = ({ collectionToEdit, onSubmit, onCle
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenBoSuuTap.trim()) {
-      alert('Tên bộ sưu tập không được để trống');
+      alert("Tên bộ sưu tập không được để trống");
       return;
     }
 
@@ -43,12 +54,14 @@ const LegoCollectionForm: React.FC<Props> = ({ collectionToEdit, onSubmit, onCle
       tenBoSuuTap: tenBoSuuTap.trim(),
       moTa: moTa.trim(),
       namPhatHanh,
-      ngayTao: collectionToEdit ? collectionToEdit.ngayTao : Date.now(),
+      ngayTao: collectionToEdit
+        ? collectionToEdit.ngayTao
+        : new Date().toISOString(),
     };
 
     onSubmit(data);
-    setTenBoSuuTap('');
-    setMoTa('');
+    setTenBoSuuTap("");
+    setMoTa("");
     setNamPhatHanh(new Date().getFullYear());
   };
 
@@ -58,16 +71,21 @@ const LegoCollectionForm: React.FC<Props> = ({ collectionToEdit, onSubmit, onCle
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className="glass-card p-6 mb-8 rounded-md border border-white/20 bg-[#10123c]"
     >
       <h2 className="text-2xl font-bold mb-6 text-white pos-gradient-text">
-        {collectionToEdit ? 'Chỉnh sửa bộ sưu tập LEGO' : 'Thêm bộ sưu tập LEGO mới'}
+        {collectionToEdit
+          ? "Chỉnh sửa bộ sưu tập LEGO"
+          : "Thêm bộ sưu tập LEGO mới"}
       </h2>
 
       <div className="space-y-4">
         <div>
-          <Label htmlFor="tenBoSuuTap" className="text-sm text-gray-300 flex items-center mb-1">
+          <Label
+            htmlFor="tenBoSuuTap"
+            className="text-sm text-gray-300 flex items-center mb-1"
+          >
             <CalendarDays className="w-4 h-4 mr-2 text-primary" />
             Tên bộ sưu tập*
           </Label>
@@ -81,7 +99,10 @@ const LegoCollectionForm: React.FC<Props> = ({ collectionToEdit, onSubmit, onCle
         </div>
 
         <div>
-          <Label htmlFor="moTa" className="text-sm text-gray-300 flex items-center mb-1">
+          <Label
+            htmlFor="moTa"
+            className="text-sm text-gray-300 flex items-center mb-1"
+          >
             <Palette className="w-4 h-4 mr-2 text-primary" />
             Mô tả
           </Label>
@@ -96,7 +117,10 @@ const LegoCollectionForm: React.FC<Props> = ({ collectionToEdit, onSubmit, onCle
         </div>
 
         <div>
-          <Label htmlFor="namPhatHanh" className="text-sm text-gray-300 flex items-center mb-1">
+          <Label
+            htmlFor="namPhatHanh"
+            className="text-sm text-gray-300 flex items-center mb-1"
+          >
             <CalendarCheck2 className="w-4 h-4 mr-2 text-primary" />
             Năm phát hành
           </Label>
@@ -122,8 +146,8 @@ const LegoCollectionForm: React.FC<Props> = ({ collectionToEdit, onSubmit, onCle
           </Button>
         )}
         <Button type="submit" variant="default" className="shadow-lg">
-        <PlusCircle className="mr-2 h-5 w-5" />
-          {collectionToEdit ? 'Lưu thay đổi' : 'Thêm bộ sưu tập'}
+          <PlusCircle className="mr-2 h-5 w-5" />
+          {collectionToEdit ? "Lưu thay đổi" : "Thêm bộ sưu tập"}
         </Button>
       </div>
     </motion.form>

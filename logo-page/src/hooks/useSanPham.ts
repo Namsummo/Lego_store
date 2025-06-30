@@ -1,4 +1,5 @@
 import { SanPham } from "@/components/types/product.type";
+import { ProductData } from "@/lib/sanphamschema";
 
 import { sanPhamService } from "@/services/sanPhamService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -24,7 +25,7 @@ export function useSanPhamID(id: number) {
 export function useAddSanPham() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: sanPhamService.addSanPham,
+    mutationFn: (data: ProductData) => sanPhamService.addSanPham(data),
     onSuccess() {
       queryClient.invalidateQueries({ queryKey: ["sanPhams"] });
     },
@@ -34,7 +35,7 @@ export function useAddSanPham() {
 export function useEditSanPham() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: SanPham }) =>
+    mutationFn: ({ id, data }: { id: number; data: ProductData }) =>
       sanPhamService.editSanPham(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sanPhams"] });

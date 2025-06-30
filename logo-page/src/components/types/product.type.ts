@@ -4,6 +4,7 @@ export interface AnhSanPhamChiTiet {
   moTa: string;
   thuTu: number;
   anhChinh: boolean;
+  sanPhamId?: number;
 }
 
 export interface DanhMuc {
@@ -17,7 +18,7 @@ export interface BoSuuTap {
   tenBoSuuTap: string;
   moTa: string;
   namPhatHanh: number;
-  ngayTao: number;
+  ngayTao?: string;
 }
 
 export interface SanPham {
