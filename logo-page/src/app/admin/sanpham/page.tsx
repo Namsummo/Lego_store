@@ -25,10 +25,6 @@ export default function SanPhamPage() {
 
   const [editSanPham, setEditSanPham] = useState<SanPham | null>(null);
   const [formKey, setFormKey] = useState(0);
-  const { keyword } = useSearchStore();
-  const [selectedDanhMuc, setSelectedDanhMuc] = useState<number | null>(null);
-  const [selectedBoSuuTap, setSelectedBoSuuTap] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
 
   const addSanPhamMutation = useAddSanPham();
   const deleteSanPhamMutation = useXoaSanPham();
@@ -106,40 +102,11 @@ export default function SanPhamPage() {
       {isLoading ? (
         <p>Đang tải danh sách sản phẩm...</p>
       ) : (
-        <>
-          <span className="text-2xl font-bold mb-4">Danh sách sản phẩm</span>
-          <SanPhamFilter
-            danhMucs={danhMucs}
-            boSuuTaps={boSuuTaps}
-            selectedDanhMuc={selectedDanhMuc}
-            selectedBoSuuTap={selectedBoSuuTap}
-            onChangeDanhMuc={setSelectedDanhMuc}
-            onChangeBoSuuTap={setSelectedBoSuuTap}
-          />
-
-          <SanPhamTable
-            sanPhams={paginatedSanPhams}
-            onDelete={handleDelete}
-            onEdit={(product) => setEditSanPham({ ...product })}
-          />
-          <div className="flex gap-2 items-center justify-center">
-            <Button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => prev - 1)}
-            >
-              Trước
-            </Button>
-            <span>
-              {currentPage} / {totalPages}
-            </span>
-            <Button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((prev) => prev + 1)}
-            >
-              Sau
-            </Button>
-          </div>
-        </>
+        <SanPhamTable
+          sanPhams={sanPhams}
+          onDelete={handleDelete}
+          onEdit={(product) => setEditSanPham(product)}
+        />
       )}
     </div>
   );

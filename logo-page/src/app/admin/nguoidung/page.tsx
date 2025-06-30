@@ -1,116 +1,162 @@
 "use client";
 
 import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/context/use-toast"; // Sử dụng useToast từ context
-import { useLocalStorage } from "@/context/useLocalStorage"; // Giả sử đường dẫn đúng
-import AccountForm from "./AccountForm"; // Sử dụng đường dẫn tương đối
-import AccountTable from "./AccountTable"; // Sử dụng đường dẫn tương đối
-import StatsCard from "./StatsCard"; // Sử dụng đường dẫn tương đối
 import {
+  Plus,
+  Search,
   Users,
   UserCheck,
-  Search,
-  Plus,
   Building,
-  Phone,
-  Mail,
   TrendingUp,
+  UserX,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { ToastProvider } from "@/components/ui/toast-provider"; // Import ToastProvider
-import { Account } from "@/components/types/account.type";
+import { toast } from "sonner";
+
+import { DTOUser, Role } from "@/components/types/account.type";
+import StatsCard from "./StatsCard";
+import AccountTable from "./AccountTable";
+import AccountForm from "./AccountForm";
+import {
+  useAccounts,
+  useAccountsByRole,
+  useCreateUser,
+  useUpdateAccount,
+  useSoftDeleteAccount,
+  useRoles,
+} from "@/hooks/useAccount";
+import { ToastProvider } from "@/components/ui/toast-provider";
+
+type TabType = "employee" | "customer" | "inactive";
 
 function UserManagementContent() {
-  const [employees, setEmployees] = useLocalStorage("employees", []);
-  const [customers, setCustomers] = useLocalStorage("customers", []);
+  const [currentTab, setCurrentTab] = useState<TabType>("employee");
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
-  const [currentTab, setCurrentTab] = useState("employees");
+  const [editingAccount, setEditingAccount] = useState<DTOUser | null>(null);
 
-  const { toast } = useToast(); // Gọi hook useToast
+  const { data: employees = [] } = useAccountsByRole("2");
+  const { data: customers = [] } = useAccountsByRole("3");
+  const { data: roles = [] } = useRoles();
 
-  const handleSaveAccount = (accountData: Account) => {
-    if (currentTab === "employees") {
-      if (editingAccount) {
-        setEmployees((prev: Account[]) =>
-          prev.map((emp: Account) =>
-            emp.id === editingAccount!.id ? accountData : emp
-          )
-        );
-      } else {
-        setEmployees((prev: Account[]) => [...prev, accountData]);
-      }
-    } else {
-      if (editingAccount) {
-        setCustomers((prev: Account[]) =>
-          prev.map((cust: Account) =>
-            cust.id === editingAccount!.id ? accountData : cust
-          )
-        );
-      } else {
-        setCustomers((prev: Account[]) => [...prev, accountData]);
-      }
-    }
-    setEditingAccount(null);
-  };
+  const inactiveAccounts = [...employees, ...customers].filter(
+    (a) => a.trangThai === 0
+  );
 
-  const handleEditAccount = (account: Account) => {
+  let accounts: DTOUser[] = [];
+  if (currentTab === "employee") {
+    accounts = employees.filter((a) => a.trangThai === 1);
+  } else if (currentTab === "customer") {
+    accounts = customers.filter((a) => a.trangThai === 1);
+  } else {
+    accounts = inactiveAccounts;
+  }
+
+  const getRoleName = (roleId: number) => {
+    return roles.find((r) => r.id === roleId)?.name || `Sai role ID: ${roleId}`;
+  };  
+  
+  const filteredAccounts = accounts.filter((acc) =>
+    [acc.ten, acc.email, getRoleName(acc.role_id)].some((field) =>
+      field.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+  
+  const createUser = useCreateUser();
+  const updateUser = useUpdateAccount();
+  const softDelete = useSoftDeleteAccount();
+  const { refetch } = useAccounts();
+
+  const handleEditAccount = (account: DTOUser) => {
     setEditingAccount(account);
     setIsFormOpen(true);
   };
 
-  const handleDeleteAccount = (accountId: string) => {
-    if (currentTab === "employees") {
-      setEmployees((prev: Account[]) =>
-        prev.filter((emp: Account) => emp.id !== accountId)
-      );
+  const handleSaveAccount = (accountData: DTOUser) => {
+    if (editingAccount) {
+      updateUser.mutate(
+        {
+          id: editingAccount.id!,
+          data: {
+            ten: accountData.ten,
+            email: accountData.email,
+            matKhau: accountData.matKhau,
+            sdt: accountData.sdt,
+            diaChi: accountData.diaChi,
+            trangThai: accountData.trangThai,
+            role_id: accountData.role_id, // <-- đổi tên nếu cần
+          },
+        },
+        {
+          onSuccess: () => {
+            toast.success("Cập nhật tài khoản thành công");
+            setIsFormOpen(false);
+            setEditingAccount(null);
+            refetch();
+          },
+          onError: () => {
+            toast.error("Lỗi cập nhật tài khoản");
+          },
+        }
+      );      
     } else {
-      setCustomers((prev: Account[]) =>
-        prev.filter((cust: Account) => cust.id !== accountId)
-      );
+      createUser.mutate(accountData, {
+        onSuccess: () => {
+          toast.success("Thêm tài khoản thành công");
+          setIsFormOpen(false);
+          refetch();
+        },
+        onError: () => {
+          toast.error("Thêm tài khoản thất bại");
+        },
+      });
     }
-
-    toast({
-      message: "Tài khoản đã được xóa thành công!",
-      type: "success", // Hoặc "error" nếu có lỗi, "destructive" không phải là type chuẩn của context
-    });
-  };
+  };  
 
   const handleAddNew = () => {
     setEditingAccount(null);
     setIsFormOpen(true);
   };
 
-  const filterAccounts = (accounts: Account[]): Account[] => {
-    if (!searchTerm) return accounts;
-    return accounts.filter(
-      (account) =>
-        account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        account.role.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleDelete = (account: DTOUser) => {
+    if (!confirm("Bạn có chắc chắn muốn ngừng hoạt động tài khoản này?")) return;
+  
+    softDelete.mutate(
+      {
+        ...account,
+        role: { id: account.role_id },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Đã chuyển tài khoản sang trạng thái ngừng hoạt động");
+          refetch();
+        },
+        onError: () => {
+          toast.error("Xóa tài khoản thất bại");
+        },
+      }
     );
-  };
+  };  
 
-  const getActiveEmployees = (): number =>
-    employees.filter((emp: Account) => emp.status === "Hoạt động").length;
-  const getActiveCustomers = (): number =>
-    customers.filter((cust: Account) => cust.status === "Hoạt động").length;
+console.log("Employees:", employees);
+console.log("Role of first employee:", employees[0]?.role_id);
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-            Hệ Thống Quản Lý Tài Khoản
+            Hệ Thống Quản Lý Người Dùng
           </h1>
           <p className="text-gray-400 text-lg">
             Quản lý nhân viên và khách hàng một cách hiệu quả
@@ -124,63 +170,33 @@ function UserManagementContent() {
           transition={{ delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
-          <StatsCard
-            title="Tổng nhân viên"
-            value={employees.length}
-            icon={Users}
-            color="border-blue-500/20"
-            trend={12}
-          />
-          <StatsCard
-            title="Nhân viên hoạt động"
-            value={getActiveEmployees()}
-            icon={UserCheck}
-            color="border-green-500/20"
-            trend={8}
-          />
-          <StatsCard
-            title="Tổng khách hàng"
-            value={customers.length}
-            icon={Building}
-            color="border-purple-500/20"
-            trend={15}
-          />
-          <StatsCard
-            title="Khách hàng hoạt động"
-            value={getActiveCustomers()}
-            icon={TrendingUp}
-            color="border-pink-500/20"
-            trend={20}
-          />
+          <StatsCard title="Tổng nhân viên" value={employees.length} icon={Users} color="border-blue-500/60"/>
+          <StatsCard title="Nhân viên hoạt động" value={employees.filter((a) => a.trangThai === 1).length} icon={UserCheck} color="border-green-500/60"/>
+          <StatsCard title="Tổng khách hàng" value={customers.length} icon={Building} color="border-purple-500/60"/>
+          <StatsCard title="Khách hàng hoạt động" value={customers.filter((a) => a.trangThai === 1).length} icon={TrendingUp} color="border-green-500/60"/>
         </motion.div>
 
-        {/* Main Content */}
+        {/* Tabs & Search */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="glass-effect rounded-2xl p-6 border border-blue-500/20"
+          className="glass-effect rounded-2xl p-6 border border-blue-500/60"
         >
-          <Tabs
-            value={currentTab}
-            onValueChange={setCurrentTab}
-            className="w-full"
-          >
+          <Tabs value={currentTab} onValueChange={(value) => setCurrentTab(value as TabType)}>
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 space-y-4 lg:space-y-0">
               <TabsList className="bg-slate-800/50 border border-blue-500/20">
-                <TabsTrigger
-                  value="employees"
-                  className="data-[state=active]:bg-blue-600"
-                >
+                <TabsTrigger value="employee" className="data-[state=active]:bg-blue-600">
                   <Users className="h-4 w-4 mr-2" />
                   Nhân viên
                 </TabsTrigger>
-                <TabsTrigger
-                  value="customers"
-                  className="data-[state=active]:bg-purple-600"
-                >
+                <TabsTrigger value="customer" className="data-[state=active]:bg-purple-600">
                   <Building className="h-4 w-4 mr-2" />
                   Khách hàng
+                </TabsTrigger>
+                <TabsTrigger value="inactive" className="data-[state=active]:bg-yellow-600">
+                  <UserX className="h-4 w-4 mr-2" />
+                  Ngừng hoạt động
                 </TabsTrigger>
               </TabsList>
 
@@ -194,37 +210,52 @@ function UserManagementContent() {
                     className="pl-10 bg-slate-800/50 border-blue-500/30 focus:border-blue-400 w-full sm:w-80"
                   />
                 </div>
-                <Button
-                  onClick={handleAddNew}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Thêm mới
-                </Button>
+                {currentTab !== "inactive" && (
+                  <Button
+                    onClick={handleAddNew}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Thêm mới
+                  </Button>
+                )}
               </div>
             </div>
 
-            <TabsContent value="employees" className="mt-6">
+            <TabsContent value="employee" className="mt-6">
               <AccountTable
-                accounts={filterAccounts(employees)}
+                accounts={filteredAccounts as any}
                 onEdit={handleEditAccount}
-                onDelete={handleDeleteAccount}
+                onDelete={handleDelete}
+                roles={roles}
                 type="employee"
               />
             </TabsContent>
 
-            <TabsContent value="customers" className="mt-6">
-              <AccountTable
-                accounts={filterAccounts(customers)}
-                onEdit={handleEditAccount}
-                onDelete={handleDeleteAccount}
-                type="customer"
-              />
+            <TabsContent value="customer" className="mt-6">
+            <AccountTable
+              accounts={filteredAccounts as any}
+              roles={roles}
+              onEdit={handleEditAccount}
+              onDelete={handleDelete}
+              type={currentTab}
+            />
+
+            </TabsContent>
+
+            <TabsContent value="inactive" className="mt-6">
+            <AccountTable
+              accounts={filteredAccounts as any}   // DTOUserWithId
+              roles={roles}                        // ★ TRUYỀN XUỐNG
+              onEdit={handleEditAccount}
+              onDelete={handleDelete}
+              type={currentTab}
+            />
+
             </TabsContent>
           </Tabs>
         </motion.div>
 
-        {/* Account Form Modal */}
         <AccountForm
           isOpen={isFormOpen}
           onClose={() => {
@@ -233,14 +264,14 @@ function UserManagementContent() {
           }}
           account={editingAccount}
           onSave={handleSaveAccount}
-          type={currentTab === "employees" ? "employee" : "customer"}
+          type={currentTab}
         />
       </div>
     </div>
   );
 }
 
-export default function Page() {
+export default function AccountPage() {
   return (
     <ToastProvider>
       <UserManagementContent />
