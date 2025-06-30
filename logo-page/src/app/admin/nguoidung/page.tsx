@@ -70,7 +70,6 @@ function UserManagementContent() {
     )
   );
   
-
   const createUser = useCreateUser();
   const updateUser = useUpdateAccount();
   const softDelete = useSoftDeleteAccount();
@@ -133,7 +132,7 @@ function UserManagementContent() {
     softDelete.mutate(
       {
         ...account,
-        role: { id: account.role_id }, // ✅ bắt buộc backend yêu cầu role object
+        role: { id: account.role_id },
       },
       {
         onSuccess: () => {
@@ -225,7 +224,7 @@ console.log("Role of first employee:", employees[0]?.role_id);
 
             <TabsContent value="employee" className="mt-6">
               <AccountTable
-                accounts={filteredAccounts}
+                accounts={filteredAccounts as any}
                 onEdit={handleEditAccount}
                 onDelete={handleDelete}
                 roles={roles}
