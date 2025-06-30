@@ -21,13 +21,11 @@ export interface HoaDonDTO {
     maPGG?: string;
 }
 export enum TrangThaiHoaDon {
-    PENDING = "Pending",
-    PROCESSING = "Processing",
-    SHIPPING = "Shipping",
-    DELIVERED = "Delivered",
-    CANCELLED = "Cancelled",
-    RETURNING = "Returning",
-    REFUNDED = "Refunded",
+    PENDING = "PENDING",
+    PROCESSING = "PROCESSING",
+    SHIPPED = "SHIPPED",
+    DELIVERED = "DELIVERED",
+    CANCELLED = "CANCELLED",
 }
 
 export enum PaymentMethods {
@@ -46,3 +44,4 @@ export interface HoaDonDetailDTO {
     gia: number;
     tongTien: number;
 }
+
