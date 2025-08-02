@@ -20,6 +20,22 @@ export const danhGiaService = {
         }
     },
 
+    async getAllReviews(): Promise<DanhGiaResponse[]> {
+        try {
+            const res = await fetchWithAuth(`${API_URL}/getAll`);
+
+            if (!res.ok) {
+                throw new Error(`Failed to fetch all reviews: ${res.status}`);
+            }
+
+            const data = await res.json();
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error("❌ Error fetching all reviews:", error);
+            return [];
+        }
+    },
+
     async createWithImages(data: CreateDanhGiaDTO, images: File[], video?: File): Promise<DanhGiaResponse> {
         try {
             const formData = new FormData();
@@ -58,8 +74,21 @@ export const danhGiaService = {
 
     async update(idDanhGia: number, idNv: number, phanHoi: string): Promise<DanhGiaResponse> {
         try {
+            // Validation
+            if (!idDanhGia || !idNv) {
+                throw new Error("Thiếu thông tin cần thiết để cập nhật đánh giá");
+            }
+
+            // Nếu phản hồi rỗng hoặc chỉ có khoảng trắng, coi như xóa phản hồi
+            const trimmedPhanHoi = phanHoi.trim();
+
+            // Kiểm tra độ dài nếu có nội dung
+            if (trimmedPhanHoi.length > 0 && trimmedPhanHoi.length > 1000) {
+                throw new Error("Phản hồi không được vượt quá 1000 ký tự");
+            }
+
             const formData = new FormData();
-            formData.append('phanHoi', phanHoi);
+            formData.append('phanHoi', trimmedPhanHoi);
 
             const res = await fetchWithAuth(`${API_URL}/update/${idDanhGia}/${idNv}`, {
                 method: 'PUT',
@@ -80,6 +109,11 @@ export const danhGiaService = {
 
     async delete(idDanhGia: number, idNv: number): Promise<string> {
         try {
+            // Validation
+            if (!idDanhGia || !idNv) {
+                throw new Error("Thiếu thông tin cần thiết để xóa đánh giá");
+            }
+
             const res = await fetchWithAuth(`${API_URL}/delete/${idDanhGia}/${idNv}`, {
                 method: 'DELETE',
             });
@@ -104,4 +138,6 @@ export const danhGiaService = {
     getVideoUrl(fileName: string): string {
         return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/lego-store/danh-gia/videos/${fileName}`;
     },
+
+
 };

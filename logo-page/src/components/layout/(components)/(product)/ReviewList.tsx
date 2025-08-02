@@ -2,7 +2,7 @@
 import { DanhGiaResponse } from "@/components/types/danhGia-type";
 import Image from "next/image";
 import { danhGiaService } from "@/services/danhGiaService";
-import { Calendar, Star } from "lucide-react";
+import { Calendar, CornerDownRight, Star } from "lucide-react";
 import React from "react";
 
 // Tái sử dụng component UserInfo từ file gốc
@@ -13,7 +13,17 @@ const UserInfo = ({
   danhGia: DanhGiaResponse;
   soSao?: number;
 }) => {
-  const displayName = danhGia.user?.ten || danhGia.tenNguoiDung || "Khách";
+  // Logic lấy tên người dùng với ưu tiên
+  let displayName = "Khách";
+
+  if (danhGia.user?.ten && danhGia.user.ten.trim()) {
+    displayName = danhGia.user.ten.trim();
+  } else if (danhGia.tenNguoiDung && danhGia.tenNguoiDung.trim()) {
+    displayName = danhGia.tenNguoiDung.trim();
+  } else if (danhGia.tenKH && danhGia.tenKH.trim()) {
+    displayName = danhGia.tenKH.trim();
+  }
+
   const avatar = displayName.charAt(0).toUpperCase();
 
   return (
@@ -28,9 +38,8 @@ const UserInfo = ({
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
-                className={`w-4 h-4 ${
-                  i < soSao ? "text-yellow-400 fill-current" : "text-gray-300"
-                }`}
+                className={`w-4 h-4 ${i < soSao ? "text-yellow-400 fill-current" : "text-gray-300"
+                  }`}
               />
             ))}
           </div>
@@ -146,10 +155,15 @@ export default function ReviewList({
 
           {danhGia.textPhanHoi && (
             <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-l-4 border-blue-400">
-              <p className="text-blue-800">
-                <span className="font-bold">💬 Phản hồi từ shop:</span>{" "}
-                {danhGia.textPhanHoi}
-              </p>
+              <div className="flex items-start gap-2">
+                <CornerDownRight className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <span className="font-bold text-blue-800">Phản hồi từ Lego MyKingDom:</span>
+                  <p className="text-blue-800 mt-1 leading-relaxed">
+                    {danhGia.textPhanHoi}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>

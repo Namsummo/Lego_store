@@ -36,24 +36,18 @@ import { AnhSanPhamChiTiet } from '@/components/types/product.type';
 // };
 
 const getMainImageUrl = (anhUrls: AnhSanPhamChiTiet[]) => {
-  console.log("getMainImageUrl input:", anhUrls);
-
   if (!anhUrls || anhUrls.length === 0) {
-    console.log("Không có ảnh, trả về placeholder");
     return '/images/avatar-admin.png';
   }
 
   const mainImg = anhUrls.find((img) => img.anhChinh);
   const imgToUse = mainImg || anhUrls[0];
-  console.log("imgToUse:", imgToUse);
 
   if (imgToUse && imgToUse.url) {
     const imageUrl = `http://localhost:8080/api/anhsp/images/${imgToUse.url}`;
-    console.log("Generated image URL:", imageUrl);
     return imageUrl;
   }
 
-  console.log("Không có URL, trả về placeholder");
   return '/images/avatar-admin.png';
 };
 
@@ -85,17 +79,12 @@ const OrderPage = () => {
   }, []);
 
   useEffect(() => {
-    console.log("hydrated:", hydrated, "user:", user);
     if (!hydrated) return;
     if (!user) {
-      console.log("Chưa có user, không redirect");
       return;
     }
     if (user.roleId !== 1 && user.roleId !== 2) {
-      console.log("User không đủ quyền, redirect về /");
       window.location.href = "/";
-    } else {
-      console.log("User đủ quyền, ở lại trang admin");
     }
   }, [user, hydrated, router]);
 
@@ -162,14 +151,14 @@ const OrderPage = () => {
   }, 0), [cart]);
   const discountAmount = useMemo(() => {
     if (!selectedVoucher) return 0;
-    if (selectedVoucher.loaiPhieuGiam === "Theo %") {
+    if (selectedVoucher.loaiPhieuGiam === "theo_phan_tram") {
       // Nếu có giamToiDa, không vượt quá giamToiDa
       const percentDiscount = (subtotal * selectedVoucher.giaTriGiam) / 100;
       if (selectedVoucher.giamToiDa) {
         return Math.min(percentDiscount, selectedVoucher.giamToiDa, subtotal);
       }
       return Math.min(percentDiscount, subtotal);
-    } else if (selectedVoucher.loaiPhieuGiam === "Theo số tiền") {
+    } else if (selectedVoucher.loaiPhieuGiam === "theo_so_tien") {
       return Math.min(selectedVoucher.giaTriGiam, subtotal);
     }
     return 0;
@@ -187,9 +176,6 @@ const OrderPage = () => {
       toast.error('Giỏ hàng trống');
       return;
     }
-
-    // Sửa: Nếu có nhập SĐT thì lấy đúng, không thì truyền 'KHACHLE'
-    // const phoneForOrder = customerPhone && customerPhone.trim() !== "" ? customerPhone.trim() : "KHACHLE";
 
     // Kiểm tra định dạng SĐT nếu có nhập
     if (customerPhone && customerPhone.trim().length > 0) {
@@ -210,8 +196,6 @@ const OrderPage = () => {
       return;
     }
 
-    // Nếu CreateHoaDonDTO yêu cầu sdt là string, thì phải truyền 'KHACHLE' khi không nhập, còn nếu không bắt buộc thì giữ như hiện tại
-    // Giả sử sdt là không bắt buộc, giữ như hiện tại:
     const orderData: CreateHoaDonDTO = {
       loaiHD: 1,
       nvId: user.id,
@@ -231,19 +215,13 @@ const OrderPage = () => {
         soLuong: item.quantity
       })),
       ...(selectedVoucher && { idPhieuGiam: selectedVoucher.id }),
-      ...(selectedCustomerId ? { userId: selectedCustomerId } : {}), // chỉ truyền userId nếu có chọn khách hàng
+      ...(selectedCustomerId ? { userId: selectedCustomerId } : {}),
       qrCodeUrl: qrCodeUrl || undefined,
       ...(customerPhone && customerPhone.trim().length > 0 ? { sdt: customerPhone.trim() } : {}),
     } as CreateHoaDonDTO;
 
-    console.log("orderData gửi lên BE:", orderData);
-    console.log('User:', user);
-    console.log('Cart length:', cart.length);
-
     try {
-      console.log('Starting to create order...');
-      const result = await createHoaDonMutation.mutateAsync(orderData);
-      console.log('Order created successfully:', result);
+      await createHoaDonMutation.mutateAsync(orderData);
       toast.success(`Tạo hóa đơn thành công! Cảm ơn ${customerName || "quý khách"}`);
 
       // Clear cart and form
@@ -255,18 +233,11 @@ const OrderPage = () => {
       setPaymentMethod('');
       setCashGiven('');
       setSelectedVoucher(null);
-      setQrCodeUrl(null); // Xóa mã QR sau khi tạo hóa đơn
+      setQrCodeUrl(null);
 
       // Navigate to orders list
       router.push('/admin/hoadon');
     } catch (error: unknown) {
-      console.error('Lỗi tạo hóa đơn:', error);
-      console.error('Error type:', typeof error);
-      console.error('Error instanceof Error:', error instanceof Error);
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-      }
       let message = 'Có lỗi xảy ra khi tạo hóa đơn';
       if (error instanceof Error) {
         message = error.message;
@@ -335,15 +306,15 @@ const OrderPage = () => {
   }, []);
 
   return (
-    <Card className="p-4 bg-gray-800 shadow-md w-full max-w-full min-h-screen">
-      <div className="flex justify-between items-center">
+    <div className="w-full h-full flex flex-col bg-gray-800">
+      <div className="flex justify-between items-center p-4">
         <div className="text-center w-full">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
             Bán Hàng Tại Quầy
           </h1>
         </div>
       </div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8 min-h-screen flex gap-6">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex gap-6 p-4 min-h-0">
         <ProductList
           products={filteredProducts}
           searchTerm={searchTerm}
@@ -352,10 +323,10 @@ const OrderPage = () => {
           cart={cart}
           pendingOrders={pendingOrders}
         />
-        <div className="w-2/5 mx-auto h-full flex flex-col gap-4">
-          <Card className="glass-card flex flex-col">
+        <div className="w-2/5 flex flex-col gap-4 min-h-0">
+          <Card className="glass-card flex flex-col flex-1">
             <CardHeader><CardTitle className="text-2xl font-bold text-white">Đơn hàng</CardTitle></CardHeader>
-            <CardContent className="flex-grow flex flex-col p-4">
+            <CardContent className="flex-grow flex flex-col p-4 min-h-0">
               <Cart
                 cart={cart}
                 updateQuantity={updateQuantity}
@@ -401,7 +372,7 @@ const OrderPage = () => {
           />
         </div>
       </motion.div>
-    </Card>
+    </div>
   );
 };
 

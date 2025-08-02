@@ -1,5 +1,6 @@
 export interface DanhGiaResponse {
     id: number;
+    tenKH?: string; // Tên khách hàng từ backend
     tieuDe: string;
     textDanhGia: string;
     textPhanHoi?: string;
@@ -10,6 +11,8 @@ export interface DanhGiaResponse {
     nvId?: number;
     dhctId?: number;
     spId?: number;
+    maSP?: string; // Mã sản phẩm từ backend
+    tenSP?: string; // Tên sản phẩm từ backend
     anhUrls?: AnhResponse[];
     video?: AnhResponse;
     // Thêm các field từ file cũ
@@ -35,20 +38,56 @@ export interface CreateDanhGiaDTO {
     soSao: number;
 }
 
-export interface UpdateDanhGiaDTO {
-    phanHoi: string;
+export interface ReviewStatsProps {
+    reviews: DanhGiaResponse[];
 }
 
-export interface ErrorResponse {
-    status: number;
-    message: string;
+export interface ReviewListProps {
+    reviews: DanhGiaResponse[];
+    filterRating: string;
+    filterType: string;
+    filterDate: string;
+    onUpdateReview: (reviewId: number, updatedReview: DanhGiaResponse) => Promise<void>;
+    onDeleteReview: (reviewId: number) => Promise<void>;
 }
 
-export interface UploadResponse {
-    success: boolean;
-    message?: string;
-    urls?: string[];
+export interface ReviewItemProps {
+    review: DanhGiaResponse;
+    onUpdateReview: (reviewId: number, updatedReview: DanhGiaResponse) => Promise<void>;
+    onDeleteReview: (reviewId: number) => Promise<void>;
 }
 
-// For backward compatibility
-export type DanhGia = DanhGiaResponse;
+export interface ReplyDialogProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: () => Promise<void>;
+    replyText: string;
+    setReplyText: (text: string) => void;
+    customerName: string;
+    hasExistingReply: boolean;
+}
+
+export interface DeleteReplyDialogProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => Promise<void>;
+    customerName: string;
+}
+
+export interface ReviewFilterProps {
+    filterRating: string;
+    filterType: string;
+    filterDate: string;
+    onFilterChange: (value: string) => void;
+    onFilterTypeChange: (value: string) => void;
+    onFilterDateChange: (value: string) => void;
+}
+
+export interface StatCardProps {
+    icon: React.ComponentType<{ className?: string }>;
+    title: string;
+    value: string | number;
+    color: string;
+}
+
+

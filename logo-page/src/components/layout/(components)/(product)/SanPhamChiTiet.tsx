@@ -4,10 +4,10 @@ import { KhuyenMaiTheoSanPham } from "@/components/types/khuyenmai-type";
 import { useListKhuyenMaiTheoSanPham } from "@/hooks/useKhuyenmai";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import React, { useState, useEffect, useMemo } from "react";
-import { useUserStore } from "@/context/authStore.store";
+import React from "react";
 
-import { useDanhGia } from "@/hooks/useDanhGia";
+
+
 
 import QuanLyAnh from "./QuanLyAnh";
 import DanhGiaSanPham from "./DanhGiaQuanLySP";
@@ -28,21 +28,7 @@ export default function SanPhamChitiet() {
     isLoading,
     error,
   } = useListKhuyenMaiTheoSanPham();
-  const { user } = useUserStore();
-  const { data: danhGias = [] } = useDanhGia(sanPhamID);
-  const [hasReviewedProduct, setHasReviewedProduct] = useState(false);
 
-  // Kiểm tra đánh giá
-  useEffect(() => {
-    if (user && danhGias) {
-      const hasReviewed = danhGias.some(
-        (danhGia) => danhGia.userId === user.id
-      );
-      setHasReviewedProduct(hasReviewed);
-    } else {
-      setHasReviewedProduct(false);
-    }
-  }, [user, danhGias]);
 
   const sanPhamChiTietRaw = sanPhamList.find((sp) => sp.id === sanPhamID);
   const sanPhamChiTiet = sanPhamChiTietRaw as SanPhamChiTietWithAnhUrls;

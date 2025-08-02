@@ -9,14 +9,45 @@ import { Button } from "@/components/ui/button";
 
 import ReviewForm from "./ReviewForm";
 import ReviewList from "./ReviewList";
+import QuanLyThongBao from "./QuanLyThongBao";
 import { KhuyenMaiTheoSanPham } from "@/components/types/khuyenmai-type";
 import { Star } from "lucide-react";
+
+// Import User type từ authStore
+interface User {
+  id: number;
+  ten: string;
+  email: string;
+  sdt?: string;
+  ngaySinh?: string | Date;
+  diaChi?: string;
+  roleId: number;
+  message: string;
+  token?: string;
+}
 
 type SanPhamChiTietWithAnhUrls = KhuyenMaiTheoSanPham & {
   anhUrls?: { url: string; anhChinh?: boolean }[];
 };
 
 // Component cho đánh giá tổng quan và bộ lọc
+interface RatingAndFilterSectionProps {
+  sanPhamChiTiet: SanPhamChiTietWithAnhUrls;
+  reviewStats: {
+    average: number;
+    total: number;
+    distribution: Record<number, number>;
+    hasComment: number;
+    hasMedia: number;
+  };
+  selectedFilter: string;
+  setSelectedFilter: (filter: string) => void;
+  user: User | null;
+  hasReviewedProduct: boolean;
+  onShowForm: () => void;
+  showDanhGiaForm: boolean;
+}
+
 const RatingAndFilterSection = ({
   sanPhamChiTiet,
   reviewStats,
@@ -26,7 +57,7 @@ const RatingAndFilterSection = ({
   hasReviewedProduct,
   onShowForm,
   showDanhGiaForm,
-}: any) => {
+}: RatingAndFilterSectionProps) => {
   // Component cho đánh giá tổng quan
   const RatingOverview = ({
     sanPhamChiTiet,
@@ -72,11 +103,10 @@ const RatingAndFilterSection = ({
   }) => (
     <Button
       onClick={onClick}
-      className={`px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 ${
-        active
-          ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
-          : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50"
-      }`}
+      className={`px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 ${active
+        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
+        : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+        }`}
     >
       {children} {count !== undefined && `(${count})`}
     </Button>
@@ -134,6 +164,7 @@ export default function DanhGiaSanPham() {
   const { data: sanPhamList = [] } = useListKhuyenMaiTheoSanPham();
   const { data: danhGias = [] } = useDanhGia(sanPhamID);
   const { user } = useUserStore();
+  const addDanhGiaMutation = useAddDanhGiaWithImages();
 
   const sanPhamChiTiet = sanPhamList.find(
     (sp) => sp.id === sanPhamID
@@ -149,7 +180,16 @@ export default function DanhGiaSanPham() {
   const [files, setFiles] = useState<File[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<any>(null); // Điều chỉnh type phù hợp
+  const [selectedMedia, setSelectedMedia] = useState<{
+    type: "image" | "video";
+    url: string;
+  } | null>(null);
+
+  // States cho thông báo
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Các hàm tiện ích và computed values (giữ nguyên)
   // Utility function
@@ -176,12 +216,12 @@ export default function DanhGiaSanPham() {
       return isNaN(date.getTime())
         ? "Chưa có ngày"
         : date.toLocaleDateString("vi-VN", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
     } catch {
       return "Chưa có ngày";
     }
@@ -236,7 +276,61 @@ export default function DanhGiaSanPham() {
   // Handlers (giữ nguyên, nhưng cập nhật tên nếu cần)
   const handleAddDanhGia = async (e: React.FormEvent) => {
     e.preventDefault();
-    // ... (code handleAddDanhGia giữ nguyên) ...
+
+    if (!user) {
+      setErrorMessage("Vui lòng đăng nhập để đánh giá sản phẩm");
+      setShowErrorModal(true);
+      return;
+    }
+
+    if (!tieuDe.trim() || !textDanhGia.trim()) {
+      setErrorMessage("Vui lòng điền đầy đủ thông tin đánh giá");
+      setShowErrorModal(true);
+      return;
+    }
+
+    setShowLoadingModal(true);
+    setIsSubmittingReview(true);
+
+    try {
+      const reviewData = {
+        tieuDe: tieuDe.trim(),
+        textDanhGia: textDanhGia.trim(),
+        soSao: soSao,
+        user_id: user.id,
+        sp_id: sanPhamID,
+      };
+
+      await addDanhGiaMutation.mutateAsync({
+        data: reviewData,
+        images: files,
+        video: videoFile || undefined,
+      });
+
+      // Reset form
+      setTieuDe("");
+      setTextDanhGia("");
+      setSoSao(5);
+      setFiles([]);
+      setVideoFile(null);
+      setShowDanhGiaForm(false);
+
+      setShowLoadingModal(false);
+      setShowSuccessModal(true);
+
+      // Tự động ẩn thông báo thành công sau 3 giây
+      setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 3000);
+
+    } catch (error: unknown) {
+      setShowLoadingModal(false);
+      const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra khi gửi đánh giá";
+      setErrorMessage(errorMessage);
+      setShowErrorModal(true);
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
   const handleMediaClick = (media: {
     type: "image" | "video";
@@ -295,6 +389,19 @@ export default function DanhGiaSanPham() {
           selectedFilter={selectedFilter}
         />
       </div>
+
+      {/* Component thông báo */}
+      <QuanLyThongBao
+        showLoadingModal={showLoadingModal}
+        showSuccessModal={showSuccessModal}
+        showErrorModal={showErrorModal}
+        errorMessage={errorMessage}
+        onCloseSuccess={() => setShowSuccessModal(false)}
+        onCloseError={() => setShowErrorModal(false)}
+        showMediaModal={showMediaModal}
+        selectedMedia={selectedMedia}
+        onCloseMedia={() => setShowMediaModal(false)}
+      />
     </section>
   );
 }

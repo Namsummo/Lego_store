@@ -16,6 +16,7 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  Star,
 } from "lucide-react";
 import { adminRoutes } from "@/lib/route";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ const iconMap = {
   tag: Tag,
   users: Users,
   "bar-chart-3": BarChart3,
+  star: Star,
 };
 
 export default function AdminSidebar() {

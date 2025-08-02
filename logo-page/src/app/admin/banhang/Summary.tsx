@@ -334,21 +334,9 @@ const Summary: React.FC<Props> = ({
             <SelectContent className="rounded-xl border-2 border-primary/60 shadow-lg bg-[#23272f] text-white">
               <SelectItem value={"0"} className="rounded-xl">Không áp dụng</SelectItem>
               {(() => {
-                console.log("Tất cả voucher:", phieuGiamGias);
-                console.log("Subtotal:", subtotal);
-                console.log("Tất cả trạng thái:", phieuGiamGias.map(v => v.trangThai));
-
                 const filteredVouchers = phieuGiamGias.filter(opt => {
-                  console.log("Kiểm tra voucher:", opt.maPhieu, {
-                    trangThai: opt.trangThai,
-                    ngayKetThuc: opt.ngayKetThuc,
-                    giaTriToiThieu: opt.giaTriToiThieu,
-                    subtotal: subtotal
-                  });
-
                   // Kiểm tra trạng thái hoạt động (chỉ lấy voucher đang hoạt động)
                   if (opt.trangThai && opt.trangThai !== "Đang hoạt động" && opt.trangThai !== "active") {
-                    console.log("Bị loại do trạng thái:", opt.trangThai);
                     return false;
                   }
 
@@ -359,31 +347,25 @@ const Summary: React.FC<Props> = ({
                     const isoDate = `${year}-${month}-${day}T23:59:59`;
                     const expiry = new Date(isoDate);
                     if (expiry < now) {
-                      console.log("Bị loại do hết hạn:", expiry);
                       return false;
                     }
                   }
 
                   // Kiểm tra giá trị tối thiểu
                   if (subtotal < opt.giaTriToiThieu) {
-                    console.log("Bị loại do giá trị tối thiểu:", opt.giaTriToiThieu);
                     return false;
                   }
 
-                  console.log("Voucher hợp lệ:", opt.maPhieu);
                   return true;
                 });
 
-                console.log("Voucher sau khi filter:", filteredVouchers);
-
-                return filteredVouchers;
-              })()
-                .map(opt => (
+                return filteredVouchers.map(opt => (
                   <SelectItem key={opt.id} value={String(opt.id)} className="rounded-xl">
                     {opt.maPhieu ? `${opt.maPhieu} - ` : ''}
-                    {opt.loaiPhieuGiam === 'Theo %' ? `${opt.giaTriGiam}%` : formatCurrency(opt.giaTriGiam)}
+                    {opt.loaiPhieuGiam === 'theo_phan_tram' ? `${opt.giaTriGiam}%` : formatCurrency(opt.giaTriGiam)}
                   </SelectItem>
-                ))}
+                ));
+              })()}
             </SelectContent>
           </Select>
         </div>

@@ -1,11 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { danhGiaService } from "@/services/danhGiaService";
-import { CreateDanhGiaDTO } from "@/components/types/danhGia-type";
+import { DanhGiaResponse, CreateDanhGiaDTO } from "@/components/types/danhGia-type";
 
 export const useDanhGia = (spId: number) => {
     return useQuery({
         queryKey: ["danhGia", spId],
         queryFn: () => danhGiaService.getBySanPham(spId),
+        staleTime: 5 * 60 * 1000, // 5 phút
+    });
+};
+
+export const useReviews = () => {
+    return useQuery<DanhGiaResponse[]>({
+        queryKey: ["reviews"],
+        queryFn: async () => {
+            try {
+                const data = await danhGiaService.getAllReviews();
+                return data;
+            } catch (error) {
+                console.log("API error:", error);
+                return [];
+            }
+        },
         staleTime: 5 * 60 * 1000, // 5 phút
     });
 };
@@ -32,7 +48,7 @@ export const useUpdateDanhGia = () => {
         mutationFn: ({ idDanhGia, idNv, phanHoi }: { idDanhGia: number; idNv: number; phanHoi: string }) =>
             danhGiaService.update(idDanhGia, idNv, phanHoi),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["danhGia"] });
+            queryClient.invalidateQueries({ queryKey: ["reviews"] });
         },
         onError: (error) => {
             console.error("❌ Error updating review:", error);
@@ -47,10 +63,11 @@ export const useDeleteDanhGia = () => {
         mutationFn: ({ idDanhGia, idNv }: { idDanhGia: number; idNv: number }) =>
             danhGiaService.delete(idDanhGia, idNv),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["danhGia"] });
+            queryClient.invalidateQueries({ queryKey: ["reviews"] });
         },
         onError: (error) => {
             console.error("❌ Error deleting review:", error);
         },
     });
 };
+

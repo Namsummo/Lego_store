@@ -1,19 +1,34 @@
 import Image from "next/image";
-import React, { useState } from "react";
+import { ReactNode } from "react";
 
-export default function QuanLyThongBao() {
-  const [showAddToCartSuccess, setShowAddToCartSuccess] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [showLoadingModal, setShowLoadingModal] = useState(false);
-  const [showMediaModal, setShowMediaModal] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<{
+interface QuanLyThongBaoProps {
+  showLoadingModal?: boolean;
+  showSuccessModal?: boolean;
+  showErrorModal?: boolean;
+  errorMessage?: string;
+  onCloseSuccess?: () => void;
+  onCloseError?: () => void;
+  showMediaModal?: boolean;
+  selectedMedia?: {
     type: "image" | "video";
     url: string;
-  } | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  } | null;
+  onCloseMedia?: () => void;
+}
 
-  const ModalWrapper = ({ children }: { children: React.ReactNode }) => (
+export default function QuanLyThongBao({
+  showLoadingModal = false,
+  showSuccessModal = false,
+  showErrorModal = false,
+  errorMessage = "",
+  onCloseSuccess,
+  onCloseError,
+  showMediaModal = false,
+  selectedMedia = null,
+  onCloseMedia,
+}: QuanLyThongBaoProps) {
+
+  const ModalWrapper = ({ children }: { children: ReactNode }) => (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
       <div className="bg-gray-900 text-white rounded-2xl p-6 shadow-xl border border-gray-700 w-full max-w-sm space-y-4">
         {children}
@@ -23,29 +38,6 @@ export default function QuanLyThongBao() {
 
   return (
     <>
-      {showAddToCartSuccess && (
-        <ModalWrapper>
-          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={3}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-          <p className="text-center text-lg font-semibold">
-            Sản phẩm đã được thêm vào Giỏ hàng
-          </p>
-        </ModalWrapper>
-      )}
-
       {showLoadingModal && (
         <ModalWrapper>
           <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto animate-spin">
@@ -91,14 +83,14 @@ export default function QuanLyThongBao() {
           </p>
           <div className="flex justify-center gap-3">
             <button
-              onClick={() => setShowSuccessModal(false)}
+              onClick={onCloseSuccess}
               className="bg-green-500 hover:bg-green-600 transition-colors px-4 py-2 rounded-lg text-white text-sm"
             >
               Đóng
             </button>
             <button
               onClick={() => {
-                setShowSuccessModal(false);
+                onCloseSuccess?.();
                 window.location.reload();
               }}
               className="bg-blue-500 hover:bg-blue-600 transition-colors px-4 py-2 rounded-lg text-white text-sm"
@@ -130,7 +122,7 @@ export default function QuanLyThongBao() {
           <p className="text-center text-sm text-gray-300">{errorMessage}</p>
           <div className="text-center mt-4">
             <button
-              onClick={() => setShowErrorModal(false)}
+              onClick={onCloseError}
               className="bg-red-600 hover:bg-red-700 transition-colors px-4 py-2 rounded-lg text-white text-sm"
             >
               Đóng
@@ -143,7 +135,7 @@ export default function QuanLyThongBao() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="relative max-w-4xl max-h-[90vh] w-full mx-4">
             <button
-              onClick={() => setShowMediaModal(false)}
+              onClick={onCloseMedia}
               className="absolute -top-10 right-0 text-white text-3xl hover:text-gray-300"
             >
               ✕

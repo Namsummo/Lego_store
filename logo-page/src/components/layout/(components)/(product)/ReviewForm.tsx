@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, Loader2, Star, X, ImageIcon, Video } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 
 interface ReviewFormProps {
   tieuDe: string;
@@ -41,14 +42,19 @@ export default function ReviewForm({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
+  // Refs để lưu trữ URLs cho cleanup
+  const imageUrlsRef = useRef<string[]>([]);
+  const videoUrlRef = useRef<string | null>(null);
+
   // Tạo preview URLs khi files thay đổi
   useEffect(() => {
     // Cleanup old URLs
-    imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+    imageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
 
     // Tạo URLs mới
     const newUrls = files.map((file) => URL.createObjectURL(file));
     setImagePreviewUrls(newUrls);
+    imageUrlsRef.current = newUrls;
 
     // Cleanup khi component unmount
     return () => {
@@ -59,14 +65,15 @@ export default function ReviewForm({
   // Tạo preview URL cho video
   useEffect(() => {
     // Cleanup old URL
-    if (videoPreviewUrl) {
-      URL.revokeObjectURL(videoPreviewUrl);
+    if (videoUrlRef.current) {
+      URL.revokeObjectURL(videoUrlRef.current);
     }
 
     // Tạo URL mới
     if (videoFile) {
       const newUrl = URL.createObjectURL(videoFile);
       setVideoPreviewUrl(newUrl);
+      videoUrlRef.current = newUrl;
 
       // Cleanup khi component unmount
       return () => {
@@ -74,15 +81,16 @@ export default function ReviewForm({
       };
     } else {
       setVideoPreviewUrl(null);
+      videoUrlRef.current = null;
     }
   }, [videoFile]);
 
   // Cleanup URLs khi component unmount
   useEffect(() => {
     return () => {
-      imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
-      if (videoPreviewUrl) {
-        URL.revokeObjectURL(videoPreviewUrl);
+      imageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      if (videoUrlRef.current) {
+        URL.revokeObjectURL(videoUrlRef.current);
       }
     };
   }, []);
@@ -121,22 +129,26 @@ export default function ReviewForm({
     onFormSubmit(e);
 
     // Cleanup URLs after submit if successful
-    imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
-    if (videoPreviewUrl) {
-      URL.revokeObjectURL(videoPreviewUrl);
+    imageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    if (videoUrlRef.current) {
+      URL.revokeObjectURL(videoUrlRef.current);
     }
     setImagePreviewUrls([]);
     setVideoPreviewUrl(null);
+    imageUrlsRef.current = [];
+    videoUrlRef.current = null;
   };
 
   const handleCancel = () => {
     // Cleanup URLs when canceling
-    imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
-    if (videoPreviewUrl) {
-      URL.revokeObjectURL(videoPreviewUrl);
+    imageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    if (videoUrlRef.current) {
+      URL.revokeObjectURL(videoUrlRef.current);
     }
     setImagePreviewUrls([]);
     setVideoPreviewUrl(null);
+    imageUrlsRef.current = [];
+    videoUrlRef.current = null;
     onCancel();
   };
 
@@ -197,11 +209,10 @@ export default function ReviewForm({
                   >
                     <Star
                       size={32}
-                      className={`transition-colors ${
-                        i <= soSao
-                          ? "text-yellow-400 fill-yellow-400 hover:text-yellow-500"
-                          : "text-gray-300 hover:text-gray-400"
-                      }`}
+                      className={`transition-colors ${i <= soSao
+                        ? "text-yellow-400 fill-yellow-400 hover:text-yellow-500"
+                        : "text-gray-300 hover:text-gray-400"
+                        }`}
                     />
                   </Button>
                 ))}
@@ -260,10 +271,13 @@ export default function ReviewForm({
                   <div className="grid grid-cols-3 gap-2">
                     {imagePreviewUrls.map((url, index) => (
                       <div key={index} className="relative group">
-                        <img
+                        <Image
                           src={url}
                           alt={`Preview ${index + 1}`}
+                          width={80}
+                          height={80}
                           className="w-full h-20 object-cover rounded-lg border border-gray-200 shadow-sm"
+                          unoptimized
                         />
                         <button
                           type="button"
