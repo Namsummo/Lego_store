@@ -64,4 +64,16 @@ export const phieuGiamGiaService = {
     const data = await res.json();
     return data;
   },
+
+  async getPhieuGiamGiaNoiBat(): Promise<PhieuGiamGia[]> {
+    const res = await fetchWithAuth(`${API_URL}/get-phieu-noi-bat?isNoiBat=1`, {
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Lỗi khi lấy phiếu giảm giá nổi bật:", errorText);
+      throw new Error("Không thể lấy phiếu giảm giá nổi bật");
+    }
+    return res.json();
+  },
 };

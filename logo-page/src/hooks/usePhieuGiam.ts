@@ -61,3 +61,13 @@ export function useHistoryPhieuGiamGia(id: number) {
     enabled: !!id,
   });
 }
+// LAY PHIEU GIAM NOI BAT
+export function useGetPhieuGiamGiaNoiBat() {
+  return useQuery<PhieuGiamGia[]>({
+    queryKey: ["phieuGiamGiaNoiBat"],
+    queryFn: async () => {
+      const res = await phieuGiamGiaService.getPhieuGiamGiaNoiBat();
+      return res;
+    },
+  });
+}

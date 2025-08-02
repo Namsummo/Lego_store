@@ -7,34 +7,6 @@ import OrderFilter from "./OrderFilter";
 import StatusCardList from "./StatusCardList";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { format } from "date-fns";
-import { formatDateFlexible } from "../khuyenmai/formatDateFlexible";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
 import OrderTable from "./OrderTable";
 
 export default function TrangThaiHoaDonPage() {
@@ -52,10 +24,9 @@ export default function TrangThaiHoaDonPage() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 5;
 
-  // 🔄 Gọi API lấy danh sách hóa đơn
   const fetchHoaDons = useCallback(() => {
     setLoading(true);
-    HoaDonService.getPagedHoaDons(page, PAGE_SIZE)
+    HoaDonService.getPagedHoaDons(0, 1000) // Lấy toàn bộ để lọc & phân trang client-side
       .then((res) => {
         setHoaDonData({ content: res.content, totalPages: res.totalPages });
       })
@@ -64,14 +35,11 @@ export default function TrangThaiHoaDonPage() {
         toast.error("Không thể tải dữ liệu hóa đơn.");
       })
       .finally(() => setLoading(false));
-  }, [page]);
+  }, []);
 
-  // 🔄 Gọi API thống kê trạng thái
   const fetchStatusCounts = useCallback(() => {
     HoaDonService.getStatusCounts()
-      .then((res) => {
-        setStatusCounts(res);
-      })
+      .then((res) => setStatusCounts(res))
       .catch((err) => {
         console.error("Lỗi thống kê trạng thái:", err);
         toast.error("Không thể lấy thống kê trạng thái.");
@@ -83,17 +51,15 @@ export default function TrangThaiHoaDonPage() {
     fetchStatusCounts();
   }, [fetchHoaDons, fetchStatusCounts]);
 
-  // 📦 Lọc dữ liệu
-  const filteredData = useMemo(() => {
+  const filteredList = useMemo(() => {
     if (!hoaDonData) return [];
 
     const searchText = search.toLowerCase();
 
     return hoaDonData.content.filter((o) => {
-      //  Map từ label (tiếng Việt) → enumKey (ví dụ: "Đang xử lý" → "PROCESSING")
-      const statusKey = Object.entries(TrangThaiHoaDon)
-        .find(([_, label]) => label === o.trangThai)?.[0]
-        .toUpperCase();
+      const statusKey = Object.entries(TrangThaiHoaDon).find(
+        ([, label]) => label === o.trangThai
+      )?.[0];
 
       const matchesStatus =
         filterStatus === "ALL" || statusKey === filterStatus;
@@ -104,26 +70,95 @@ export default function TrangThaiHoaDonPage() {
         !search ||
         o.ten?.toLowerCase().includes(searchText) ||
         o.maHD?.toLowerCase().includes(searchText) ||
-        o.diaChi?.toLowerCase().includes(searchText) ||
+        o.phuongThucThanhToan?.toLowerCase().includes(searchText) ||
         o.maVanChuyen?.toLowerCase().includes(searchText);
 
       return matchesStatus && matchesPayment && matchesSearch;
     });
   }, [hoaDonData, filterStatus, filterPayment, search]);
 
-  // 👆 Xử lý khi chọn trạng thái
+  // ✅ Phân trang client-side từ danh sách đã lọc
+  const pagedData = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    return filteredList.slice(start, end);
+  }, [filteredList, page, PAGE_SIZE]);
+
+  const totalFilteredPages = useMemo(() => {
+    return Math.ceil(filteredList.length / PAGE_SIZE) || 1;
+  }, [filteredList, PAGE_SIZE]);
+
   const handleCardClick = (status: string) => {
     setFilterStatus((prev) => (prev === status ? "ALL" : status));
     setPage(0);
   };
 
-  // 👁️ Xem chi tiết hóa đơn
-  const handleViewDetail = (id: number) => {
-    toast.info(`📄 Xem chi tiết hóa đơn #${id}`);
+  const handleStatusUpdate = async (
+    id: number,
+    currentStatus: string,
+    newStatus: string
+  ) => {
+    const currentHoaDon = hoaDonData?.content.find((hd) => hd.id === id);
+    if (!currentHoaDon) {
+      toast.error("Không tìm thấy hóa đơn.");
+      return;
+    }
+
+    if (currentHoaDon.trangThai === newStatus) {
+      toast.warning("Trạng thái mới giống trạng thái hiện tại.");
+      return;
+    }
+
+    if (!isValidTrangThaiTransition(currentHoaDon.trangThai, newStatus)) {
+      toast.error("Chuyển trạng thái không hợp lệ.");
+      return;
+    }
+
+    try {
+      await HoaDonService.updateTrangThai(id, newStatus);
+      toast.success("Cập nhật trạng thái thành công.");
+      fetchHoaDons();
+      fetchStatusCounts();
+    } catch (error: any) {
+      console.error("Lỗi cập nhật trạng thái:", error);
+      toast.error(error?.message || "Không thể cập nhật trạng thái.");
+    }
   };
 
+  function isValidTrangThaiTransition(current: string, next: string): boolean {
+    if (!current || !next) return false;
+
+    const keyMap = Object.entries(TrangThaiHoaDon).reduce((acc, [key, value]) => {
+      acc[value] = key;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const currentKey = keyMap[current];
+    const nextKey = keyMap[next];
+
+    if (!currentKey || !nextKey) return false;
+
+    if (currentKey === "PENDING") {
+      return nextKey === "PROCESSING" || nextKey === "CANCELLED";
+    } else if (currentKey === "PROCESSING") {
+      return nextKey === "PACKING";
+    } else if (currentKey === "PACKING") {
+      return nextKey === "SHIPPED";
+    } else if (currentKey === "SHIPPED") {
+      return nextKey === "DELIVERED" || nextKey === "FAILED";
+    } else if (currentKey === "DELIVERED") {
+      return nextKey === "COMPLETED";
+    } else if (currentKey === "COMPLETED" || currentKey === "CANCELLED") {
+      return false;
+    } else if (currentKey === "FAILED") {
+      return nextKey === "PENDING" || nextKey === "CANCELLED";
+    }
+
+    return false;
+  }
+
   return (
-    <Card className="p-4 bg-gray-800 shadow-md max-h-screen w-full h-full">
+    <Card className="p-4 bg-gray-800 shadow-md w-full h-full">
       <StatusCardList
         statusCounts={statusCounts}
         filterStatus={filterStatus}
@@ -132,10 +167,6 @@ export default function TrangThaiHoaDonPage() {
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <OrderFilter
-          from={from}
-          setFrom={setFrom}
-          to={to}
-          setTo={setTo}
           search={search}
           setSearch={setSearch}
           filterStatus={filterStatus}
@@ -144,22 +175,20 @@ export default function TrangThaiHoaDonPage() {
           setFilterPayment={setFilterPayment}
           orders={hoaDonData?.content || []}
           setPage={setPage}
+          PAGE_SIZE={PAGE_SIZE}
         />
       </div>
 
       <OrderTable
         data={{
-          content: filteredData,
-          totalPages: hoaDonData?.totalPages || 1,
+          content: pagedData,
+          totalPages: totalFilteredPages,
         }}
         page={page}
         setPage={setPage}
-        handleViewDetail={handleViewDetail}
         PAGE_SIZE={PAGE_SIZE}
-        fetchData={() => {
-          fetchHoaDons();
-          fetchStatusCounts(); // ✅ load lại thống kê
-        }}
+        isValidTrangThaiTransition={isValidTrangThaiTransition}
+        handleStatusUpdate={handleStatusUpdate}
       />
     </Card>
   );

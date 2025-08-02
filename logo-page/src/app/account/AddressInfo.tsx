@@ -5,12 +5,13 @@ import { useThongTinNguoiNhan, useCreateThongTin, useUpdateThongTin, useDeleteTh
 import { DTOThongTinNguoiNhan, ThongTinNguoiNhan } from "@/components/types/thongTinTaiKhoan-types";
 import { useUserStore } from "@/context/authStore.store";
 import { toast } from "sonner";
-import { MapPin, Plus, Edit, Trash2, Star, User, Phone, Home, Building } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MapPin, Plus, Edit, Trash2, Star } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox"; // Thêm Checkbox từ thư viện UI
 import {
   Dialog,
   DialogContent,
@@ -84,8 +85,8 @@ export default function AddressInfo() {
           .filter(([code]) => wardsByProvince[code] && wardsByProvince[code].length > 0)
           .map(([code, info]) => ({
             code,
-            ...info,
-            wards: wardsByProvince[code] || []
+            ...info as any,
+            wards: wardsByProvince[code] || [],
           }));
 
         setProvinces(filteredProvinces);
@@ -101,7 +102,7 @@ export default function AddressInfo() {
   // Update wards khi chọn tỉnh
   useEffect(() => {
     if (selectedProvince) {
-      const selectedProvinceData = provinces.find(p => p.code === selectedProvince);
+      const selectedProvinceData = provinces.find((p) => p.code === selectedProvince);
       setWards(selectedProvinceData?.wards || []);
     } else {
       setWards([]);
@@ -111,10 +112,10 @@ export default function AddressInfo() {
 
   // Update formData khi chọn tỉnh/xã
   useEffect(() => {
-    const selectedProvinceData = provinces.find(p => p.code === selectedProvince);
-    const selectedWardData = wards.find(w => w.code === selectedWard);
+    const selectedProvinceData = provinces.find((p) => p.code === selectedProvince);
+    const selectedWardData = wards.find((w) => w.code === selectedWard);
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       thanhPho: selectedProvinceData?.name || "",
       xa: selectedWardData?.name || "",
@@ -124,7 +125,7 @@ export default function AddressInfo() {
   // Update idUser
   useEffect(() => {
     if (currentUserId) {
-      setFormData(prev => ({ ...prev, idUser: currentUserId }));
+      setFormData((prev) => ({ ...prev, idUser: currentUserId }));
     }
   }, [currentUserId]);
 
@@ -136,7 +137,7 @@ export default function AddressInfo() {
       duong: "",
       xa: "",
       thanhPho: "",
-      isMacDinh: 0,
+      isMacDinh: thongTinList.length === 0 ? 1 : 0, // Đặt mặc định nếu danh sách rỗng
       idUser: currentUserId || 0,
     });
     setSelectedProvince("");
@@ -188,12 +189,19 @@ export default function AddressInfo() {
         // EDIT MODE
         await updateMutation.mutateAsync({
           id: editingId,
-          data: formData
+          data: formData,
         });
         toast.success("✅ Cập nhật địa chỉ thành công!");
       } else {
         // CREATE MODE
-        await createMutation.mutateAsync(formData);
+        // Nếu danh sách rỗng, tự động đặt isMacDinh = 1
+        const isFirstAddress = thongTinList.length === 0;
+        const newFormData = {
+          ...formData,
+          isMacDinh: isFirstAddress ? 1 : formData.isMacDinh,
+        };
+
+        await createMutation.mutateAsync(newFormData);
         toast.success("✅ Thêm địa chỉ thành công!");
       }
 
@@ -207,7 +215,7 @@ export default function AddressInfo() {
     }
   };
 
-  // Handle edit - chỉnh sửa thông tin mà không thay đổi trạng thái mặc định
+  // Handle edit
   const handleEdit = (item: ThongTinNguoiNhan) => {
     setFormData({
       hoTen: item.hoTen,
@@ -215,23 +223,23 @@ export default function AddressInfo() {
       duong: item.duong,
       xa: item.xa,
       thanhPho: item.thanhPho,
-      isMacDinh: 1 || 0, // Giữ nguyên trạng thái mặc định hiện tại
-      idUser: currentUserId || 0
+      isMacDinh: item.isMacDinh ? 1 : 0,
+      idUser: currentUserId || 0,
     });
 
     // Set province và ward
-    const province = provinces.find(p => p.name === item.thanhPho);
+    const province = provinces.find((p) => p.name === item.thanhPho);
     if (province) {
       setSelectedProvince(province.code);
       setTimeout(() => {
-        const ward = province.wards?.find(w => w.name === item.xa);
+        const ward = province.wards?.find((w: any) => w.name === item.xa);
         if (ward) {
           setSelectedWard(ward.code);
         }
       }, 100);
     }
 
-    setEditingId(item.id);
+    setEditingId(item.id as number);
     setShowDialog(true);
   };
 
@@ -251,7 +259,7 @@ export default function AddressInfo() {
     }
   };
 
-  // Handle set default - chỉ đặt mặc định, không bỏ
+  // Handle set default
   const handleSetDefault = async (id: number) => {
     if (!currentUserId) {
       toast.error("Vui lòng đăng nhập");
@@ -259,7 +267,7 @@ export default function AddressInfo() {
     }
 
     try {
-      const targetAddress = thongTinList.find(item => item.id === id);
+      const targetAddress = thongTinList.find((item) => item.id === id);
       if (!targetAddress) {
         toast.error("Địa chỉ không tồn tại");
         await refetch();
@@ -271,18 +279,31 @@ export default function AddressInfo() {
         return;
       }
 
-      // Chỉ update trạng thái mặc định, giữ nguyên thông tin khác
+      // Đặt tất cả địa chỉ khác thành không mặc định
+      const updatePromises = thongTinList
+        .filter((item) => item.isMacDinh === 1 && item.id !== id)
+        .map((item) =>
+          updateMutation.mutateAsync({
+            id: item.id,
+            data: {
+              ...item,
+              isMacDinh: 0,
+              idUser: currentUserId,
+            },
+          })
+        );
+
+      // Chờ tất cả các cập nhật hoàn tất
+      await Promise.all(updatePromises);
+
+      // Đặt địa chỉ hiện tại làm mặc định
       await updateMutation.mutateAsync({
         id: id,
         data: {
-          hoTen: targetAddress.hoTen,
-          sdt: targetAddress.sdt,
-          duong: targetAddress.duong,
-          xa: targetAddress.xa,
-          thanhPho: targetAddress.thanhPho,
-          isMacDinh: 1, // Chỉ thay đổi này
-          idUser: currentUserId
-        }
+          ...targetAddress,
+          isMacDinh: 1,
+          idUser: currentUserId,
+        },
       });
 
       toast.success("⭐ Đã đặt làm địa chỉ mặc định!");
@@ -293,7 +314,7 @@ export default function AddressInfo() {
     }
   };
 
-  // Handle unset default - chỉ bỏ trạng thái mặc định
+  // Handle unset default
   const handleUnsetDefault = async (id: number) => {
     if (!currentUserId) {
       toast.error("Vui lòng đăng nhập");
@@ -301,25 +322,20 @@ export default function AddressInfo() {
     }
 
     try {
-      const targetAddress = thongTinList.find(item => item.id === id);
+      const targetAddress = thongTinList.find((item) => item.id === id);
       if (!targetAddress) {
         toast.error("Địa chỉ không tồn tại");
         await refetch();
         return;
       }
 
-      // Chỉ update trạng thái mặc định, giữ nguyên thông tin khác
       await updateMutation.mutateAsync({
         id: id,
         data: {
-          hoTen: targetAddress.hoTen,
-          sdt: targetAddress.sdt,
-          duong: targetAddress.duong,
-          xa: targetAddress.xa,
-          thanhPho: targetAddress.thanhPho,
-          isMacDinh: 0, // Chỉ thay đổi này
-          idUser: currentUserId
-        }
+          ...targetAddress,
+          isMacDinh: 0,
+          idUser: currentUserId,
+        },
       });
 
       toast.success("🔄 Đã bỏ địa chỉ mặc định!");
@@ -381,19 +397,18 @@ export default function AddressInfo() {
           return (
             <div
               key={rowIndex}
-              className={`flex gap-4 ${rowItems.length === 1 ? 'justify-center' : 'justify-between'
-                }`}
+              className={`flex gap-4 ${rowItems.length === 1 ? "justify-center" : "justify-between"}`}
             >
               {rowItems.map((item) => (
                 <div
                   key={item.id}
-                  className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow ${rowItems.length === 1 ? 'w-1/2' : 'flex-1'
+                  className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow ${rowItems.length === 1 ? "w-1/2" : "flex-1"
                     }`}
                 >
                   {/* Name and Default Badge */}
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-black text-lg">{item.hoTen}</h3>
-                    {item.isMacDinh === true && (
+                    {item.isMacDinh === 1 && (
                       <Badge className="bg-orange-500 text-white px-2 py-1 text-xs rounded">
                         Mặc định
                       </Badge>
@@ -419,7 +434,7 @@ export default function AddressInfo() {
                       Sửa
                     </Button>
 
-                    {item.isMacDinh === false && (
+                    {item.isMacDinh === 0 && (
                       <Button
                         size="sm"
                         onClick={() => handleSetDefault(item.id)}
@@ -430,9 +445,20 @@ export default function AddressInfo() {
                       </Button>
                     )}
 
+                    {item.isMacDinh === 1 && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleUnsetDefault(item.id)}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 text-sm rounded flex items-center gap-1"
+                      >
+                        <Star className="w-3 h-3" />
+                        Bỏ mặc định
+                      </Button>
+                    )}
+
                     <Button
                       size="sm"
-                      onClick={() => setDeleteId(item.id)}
+                      onClick={() => setDeleteId(item.id as number)}
                       className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded flex items-center gap-1"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -450,12 +476,8 @@ export default function AddressInfo() {
       {thongTinList.length === 0 && (
         <div className="text-center py-12">
           <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Chưa có địa chỉ nào
-          </h3>
-          <p className="text-gray-500 mb-4">
-            Thêm địa chỉ đầu tiên để bắt đầu mua sắm
-          </p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có địa chỉ nào</h3>
+          <p className="text-gray-500 mb-4">Thêm địa chỉ đầu tiên để bắt đầu mua sắm</p>
           <Button
             onClick={() => setShowDialog(true)}
             className="bg-orange-500 hover:bg-orange-600 text-white"
@@ -474,7 +496,9 @@ export default function AddressInfo() {
               {editingId ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ mới"}
             </DialogTitle>
             <DialogDescription className="text-gray-600">
-              {editingId ? "Cập nhật thông tin địa chỉ" : "Điền thông tin địa chỉ mới"}
+              {editingId
+                ? "Cập nhật thông tin địa chỉ"
+                : "Điền thông tin địa chỉ mới (địa chỉ đầu tiên sẽ tự động được đặt làm mặc định)"}
             </DialogDescription>
           </DialogHeader>
 
@@ -528,7 +552,11 @@ export default function AddressInfo() {
                 <Label className="text-black">
                   Xã/Phường <span className="text-red-500">*</span>
                 </Label>
-                <Select value={selectedWard} onValueChange={handleWardChange} disabled={!selectedProvince}>
+                <Select
+                  value={selectedWard}
+                  onValueChange={handleWardChange}
+                  disabled={!selectedProvince}
+                >
                   <SelectTrigger className="bg-white border-gray-300 text-black">
                     <SelectValue placeholder="Chọn xã/phường" />
                   </SelectTrigger>
@@ -555,6 +583,27 @@ export default function AddressInfo() {
                 className="bg-white border-gray-300 text-black"
                 required
               />
+            </div>
+
+            <div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="isMacDinh"
+                  checked={formData.isMacDinh === 1 || thongTinList.length === 0}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, isMacDinh: checked ? 1 : 0 })
+                  }
+                  disabled={thongTinList.length === 0}
+                />
+                <Label htmlFor="isMacDinh" className="text-black">
+                  Đặt làm địa chỉ mặc định
+                  {thongTinList.length === 0 && (
+                    <span className="text-gray-500 text-sm ml-2">
+                      (Tự động chọn cho địa chỉ đầu tiên)
+                    </span>
+                  )}
+                </Label>
+              </div>
             </div>
 
             <DialogFooter>
@@ -601,6 +650,3 @@ export default function AddressInfo() {
     </div>
   );
 }
-
-
-

@@ -16,8 +16,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatDateFlexible } from "../khuyenmai/formatDateFlexible";
 import { TrangThaiHoaDon, HoaDonDTO } from "@/components/types/hoaDon-types";
+import { useState } from "react";
 
 interface OrderTableProps {
   data: { content: HoaDonDTO[]; totalPages: number };
@@ -40,42 +51,54 @@ export default function OrderTable({
   handleStatusUpdate,
   isValidTrangThaiTransition,
 }: OrderTableProps) {
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<HoaDonDTO | null>(null);
+  const [nextStatus, setNextStatus] = useState<string | null>(null);
+
+  const handleSelectChange = (order: HoaDonDTO, value: string) => {
+    setSelectedOrder(order);
+    setNextStatus(value);
+    setShowDialog(true);
+  };
+
+  const confirmStatusChange = () => {
+    if (selectedOrder && nextStatus) {
+      handleStatusUpdate(
+        selectedOrder.id,
+        selectedOrder.trangThai || "",
+        nextStatus
+      );
+    }
+    setShowDialog(false);
+    setSelectedOrder(null);
+    setNextStatus(null);
+  };
+
   return (
     <>
-      <div className="rounded-2xl shadow-xl overflow-x-auto bg-[#1A1F2E] border border-[#3B82F6]">
+      <div className=" border-2 border-blue-500 rounded-2xl mt-3 overflow-x-auto shadow-2xl shadow-blue-500/40">
         <Table>
           <TableHeader>
             <TableRow className="bg-[#2A2F4E]">
-              <TableHead className="text-white text-center text-sm font-semibold bg-blue-500">
-                STT
-              </TableHead>
-              <TableHead className="text-white text-center text-sm font-semibold bg-blue-500">
-                Mã HĐ
-              </TableHead>
-              <TableHead className="text-white text-center text-sm font-semibold bg-blue-500">
-                Tên khách hàng
-              </TableHead>
-              <TableHead className="text-white text-center text-sm font-semibold bg-blue-500">
-                SĐT
-              </TableHead>
-              <TableHead className="text-white text-center text-sm font-semibold bg-blue-500">
-                Tổng tiền
-              </TableHead>
-              <TableHead className="text-white text-center text-sm font-semibold bg-blue-500">
-                Ngày tạo
-              </TableHead>
-              <TableHead className="text-white text-center text-sm font-semibold bg-blue-500">
-                Trạng thái
-              </TableHead>
-              <TableHead className="text-white text-center text-sm font-semibold bg-blue-500">
-                Thanh toán
-              </TableHead>
-              <TableHead className="text-white text-center text-sm font-semibold bg-blue-500">
-                Loại HĐ
-              </TableHead>
-              <TableHead className="text-white text-center text-sm font-semibold bg-blue-500">
-                Mã VC
-              </TableHead>
+              {[
+                "STT",
+                "Mã HĐ",
+                "Tên khách hàng",
+                "SĐT",
+                "Tổng tiền",
+                "Ngày tạo",
+                "Trạng thái",
+                "Thanh toán",
+                "Loại HĐ",
+                "Mã VC",
+              ].map((text) => (
+                <TableHead
+                  key={text}
+                  className="text-white text-center text-sm font-semibold bg-blue-500"
+                >
+                  {text}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -84,17 +107,16 @@ export default function OrderTable({
                 <TableCell className="text-white text-center">
                   {page * PAGE_SIZE + index + 1}
                 </TableCell>
-                <TableCell className="text-[#A855F7] font-semibold text-center">
+                <TableCell className="text-white font-semibold text-center">
                   {hd.maHD || "N/A"}
                 </TableCell>
                 <TableCell className="text-white text-center">
-                  {hd.ten || (hd.user && hd.user.ten) || "N/A"}
+                  {hd.ten || hd.user?.ten || "N/A"}
                 </TableCell>
-
                 <TableCell className="text-white text-center">
-                  {hd.sdt || (hd.user && hd.user.sdt) || "N/A"}
+                  {hd.sdt || hd.user?.sdt || "N/A"}
                 </TableCell>
-                <TableCell className="text-green-400 text-center font-medium">
+                <TableCell className="text-white text-center font-medium">
                   {hd.tongTien?.toLocaleString("vi-VN") || "0"}₫
                 </TableCell>
                 <TableCell className="text-white text-center">
@@ -104,9 +126,7 @@ export default function OrderTable({
                   <div className="flex justify-center">
                     <Select
                       value={hd.trangThai || ""}
-                      onValueChange={(value) =>
-                        handleStatusUpdate(hd.id, hd.trangThai || "", value)
-                      }
+                      onValueChange={(value) => handleSelectChange(hd, value)}
                     >
                       <SelectTrigger className="w-[120px] bg-[#2A2F4E] border border-[#3B82F6] text-white text-xs font-semibold rounded-lg">
                         <SelectValue placeholder="Trạng thái" />
@@ -119,9 +139,9 @@ export default function OrderTable({
                             disabled={
                               hd.trangThai
                                 ? !isValidTrangThaiTransition(
-                                    hd.trangThai,
-                                    status
-                                  ) || hd.trangThai === status
+                                  hd.trangThai,
+                                  status
+                                ) || hd.trangThai === status
                                 : false
                             }
                             className="text-xs"
@@ -140,8 +160,8 @@ export default function OrderTable({
                   {hd.loaiHD === 1
                     ? "Tại quầy"
                     : hd.loaiHD === 2
-                    ? "Online"
-                    : "N/A"}
+                      ? "Online"
+                      : "N/A"}
                 </TableCell>
                 <TableCell className="text-white text-center">
                   {hd.maVanChuyen || "N/A"}
@@ -162,7 +182,35 @@ export default function OrderTable({
         </Table>
       </div>
 
-      {/* Phân trang chuyển ra ngoài bảng */}
+      {/* AlertDialog xác nhận chuyển trạng thái */}
+      <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
+        <AlertDialogContent className="bg-[#1A1F2E] border border-blue-400 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận chuyển trạng thái</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              Bạn có chắc chắn muốn chuyển trạng thái từ{" "}
+              <strong className="text-yellow-400">
+                {selectedOrder?.trangThai}
+              </strong>{" "}
+              sang{" "}
+              <strong className="text-green-400">{nextStatus}</strong> không?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-red-500 hover:bg-red-600 text-white">
+              Hủy
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmStatusChange}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Xác nhận
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Phân trang */}
       <div className="flex justify-center items-center mt-4 bg-[#1A1F2E] p-2 rounded-lg">
         <Button
           variant="outline"

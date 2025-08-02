@@ -1,4 +1,4 @@
-import { HoaDonDTO, CreateHoaDonDTO, HoaDonChiTietDTO } from "@/components/types/hoaDon-types";
+import { HoaDonDTO, CreateHoaDonDTO, HoaDonChiTietDTO, TrangThaiHoaDon } from "@/components/types/hoaDon-types";
 import { fetchWithAuth } from "./fetchWithAuth";
 
 const API_URL = "http://localhost:8080/api/lego-store/hoa-don";
@@ -107,24 +107,68 @@ export const HoaDonService = {
         if (!res.ok) throw new Error("Không thể lấy chi tiết hóa đơn");
         return res.json();
     },
+    ///  update trangg thai 
 
-    async updateTrangThai(id: number, trangThai: string): Promise<HoaDonDTO> {
-        const nvId = await getCurrentUserId();
-        if (!nvId) {
-            throw new Error('Không tìm thấy thông tin nhân viên đăng nhập');
-        }
-        const res = await fetchWithAuth(
-            `${API_URL}/${id}/trang-thai?trangThai=${encodeURIComponent(trangThai)}&idNV=${nvId}`,
-            {
-                method: "PUT",
+    async updateTrangThai(id: number, trangThai: keyof typeof TrangThaiHoaDon | string): Promise<HoaDonDTO> {
+        try {
+            const nvId = await getCurrentUserId();
+            console.log('Current employee ID:', nvId);
+
+            if (!nvId) {
+                throw new Error('No logged-in employee found. Please log in again.');
             }
-        );
-        const data = await res.json();
-        if (!res.ok) {
-            console.error("Lỗi cập nhật trạng thái hóa đơn:", data);
-            throw new Error(data?.message || "Không thể cập nhật trạng thái");
+
+            // Validate trangThai using TrangThaiHoaDon enum values
+            const validStatuses = Object.values(TrangThaiHoaDon);
+            if (!validStatuses.includes(trangThai)) {
+                throw new Error(`Invalid status: ${trangThai}. Valid statuses are: ${validStatuses.join(', ')}`);
+            }
+
+            const requestBody = {
+                hoaDonIds: [id],
+                trangThai,
+                idNV: nvId
+            };
+            console.log('Request body for status update:', requestBody);
+
+            const res = await fetchWithAuth(`${API_URL}/${id}/trang-thai`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            console.log('Response status:', res.status);
+            console.log('Response headers:', {
+                authorization: res.headers.get('authorization'),
+                contentType: res.headers.get('content-type')
+            });
+
+            if (!res.ok) {
+                let errorMessage = 'Failed to update order status';
+                const contentType = res.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const errorData = await res.json();
+                    errorMessage = errorData?.message || JSON.stringify(errorData);
+                } else {
+                    const errorText = await res.text();
+                    errorMessage = errorText || `HTTP ${res.status}: ${res.statusText}`;
+                }
+                throw new Error(errorMessage);
+            }
+
+            try {
+                const data = await res.json();
+                return data;
+            } catch {
+                // Fallback if response is not JSON
+                return { id, trangThai } as HoaDonDTO;
+            }
+        } catch (error) {
+            console.error(`Error updating status for order ID ${id}:`, error);
+            throw error;
         }
-        return data;
     },
 
     async getStatusCounts(): Promise<Record<string, number>> {
@@ -159,6 +203,10 @@ export const HoaDonService = {
         }
     },
 };
+
+
+
+
 
 
 

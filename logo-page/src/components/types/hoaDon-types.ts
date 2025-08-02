@@ -31,7 +31,7 @@ export interface HoaDonDTOOld {
   id: number;
   maHD: string;
   loaiHD: number;
-  tamTinh: number; Đan
+  tamTinh: number;
   tongTien: number;
   soTienGiam: number;
   diaChiGiaoHang: string;

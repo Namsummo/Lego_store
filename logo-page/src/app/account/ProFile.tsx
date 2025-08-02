@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { useThongTinNguoiNhan, useCreateThongTin, useUpdateThongTin } from "@/hooks/useThongTinTaiKhoan";
+import { useThongTinNguoiNhan } from "@/hooks/useThongTinTaiKhoan";
 import { useUserStore } from "@/context/authStore.store";
 import { toast } from "sonner";
 import { accountService } from "@/services/accountService";
@@ -30,6 +29,13 @@ export default function ProFile() {
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<any>(null);
+  const [errors, setErrors] = useState<{
+    sdt?: string;
+    ngaySinh?: string;
+    duong?: string;
+    xa?: string;
+    thanhPho?: string;
+  }>({});
 
   // Lấy user từ auth store
   const { user, updateUser } = useUserStore();
@@ -37,7 +43,7 @@ export default function ProFile() {
 
   // Lấy địa chỉ mặc định
   const { data: thongTinList = [] } = useThongTinNguoiNhan(currentUserId || 0);
-  const defaultAddress = thongTinList.find(item => item.isMacDinh === true);
+  const defaultAddress = thongTinList.find((item) => item.isMacDinh === true);
 
   // State cho địa chỉ
   const [provinces, setProvinces] = useState<any[]>([]);
@@ -92,28 +98,34 @@ export default function ProFile() {
       setWards([]);
     }
     setSelectedWard("");
+    setErrors((prev) => ({ ...prev, xa: selectedProvince ? "" : "Vui lòng chọn tỉnh/thành phố trước" }));
   }, [selectedProvince, allWards]);
 
   // Cập nhật personalData khi chọn tỉnh/xã
   useEffect(() => {
-    const selectedProvinceData = provinces.find(p => p.code === selectedProvince);
-    const selectedWardData = wards.find(w => w.code === selectedWard);
+    const selectedProvinceData = provinces.find((p) => p.code === selectedProvince);
+    const selectedWardData = wards.find((w) => w.code === selectedWard);
 
-    setPersonalData(prev => ({
+    setPersonalData((prev) => ({
       ...prev,
       thanhPho: selectedProvinceData?.name || "",
       xa: selectedWardData?.name || "",
     }));
+    setErrors((prev) => ({
+      ...prev,
+      thanhPho: selectedProvinceData ? "" : "Vui lòng chọn tỉnh/thành phố",
+      xa: selectedWardData ? "" : selectedProvince ? "Vui lòng chọn xã/phường" : prev.xa,
+    }));
   }, [selectedProvince, selectedWard, provinces, wards]);
 
-  // Cập nhật personalData khi user thay đổi
+  // Cập nhật personalData khi user hoặc defaultAddress thay đổi
   useEffect(() => {
     if (user) {
       const parsedDate = user.ngaySinh
         ? (() => {
           try {
             let parsed;
-            if (typeof user.ngaySinh === 'string') {
+            if (typeof user.ngaySinh === "string") {
               parsed = parse(user.ngaySinh, "dd-MM-yyyy", new Date());
               if (isNaN(parsed.getTime())) {
                 parsed = new Date(user.ngaySinh);
@@ -137,39 +149,62 @@ export default function ProFile() {
         xa: defaultAddress?.xa || "",
         thanhPho: defaultAddress?.thanhPho || "",
       });
-    }
-  }, [user, defaultAddress]);
 
-  // Thêm useEffect để set địa chỉ mặc định vào form
-  useEffect(() => {
-    if (defaultAddress && provinces.length > 0) {
-      const province = provinces.find(p => p.name === defaultAddress.thanhPho);
-      if (province) {
-        setSelectedProvince(province.code);
-
-        setTimeout(() => {
-          const wardsArr = Object.entries(allWards as Record<string, any>)
-            .filter(([_, info]) => (info as any).parent_code === province.code)
-            .map(([code, info]) => ({ code, ...(info as any) }));
-
-          const ward = wardsArr.find(w => w.name === defaultAddress.xa);
-          if (ward) {
-            setSelectedWard(ward.code);
-          }
-        }, 100);
+      // Đặt giá trị select khi có defaultAddress
+      if (defaultAddress && provinces.length > 0) {
+        const province = provinces.find((p) => p.name === defaultAddress.thanhPho);
+        if (province) {
+          setSelectedProvince(province.code);
+          setTimeout(() => {
+            const wardsArr = Object.entries(allWards as Record<string, any>)
+              .filter(([_, info]) => (info as any).parent_code === province.code)
+              .map(([code, info]) => ({ code, ...(info as any) }));
+            const ward = wardsArr.find((w) => w.name === defaultAddress.xa);
+            if (ward) {
+              setSelectedWard(ward.code);
+            }
+          }, 100);
+        }
       }
-
-      setPersonalData(prev => ({
-        ...prev,
-        duong: defaultAddress.duong || "",
-        xa: defaultAddress.xa || "",
-        thanhPho: defaultAddress.thanhPho || "",
-      }));
     }
-  }, [defaultAddress, provinces, allWards]);
+  }, [user, defaultAddress, provinces, allWards]);
+
+  const validatePhone = (value: string) => {
+    if (!value.trim()) return "Vui lòng nhập số điện thoại";
+    const phoneRegex = /^0[0-9]{9}$/;
+    if (!phoneRegex.test(value)) return "Số điện thoại không hợp lệ. Vui lòng nhập 10 chữ số, bắt đầu bằng 0 (ví dụ: 0123456789)";
+    return "";
+  };
+
+  const validateDate = (date: Date | undefined) => {
+    if (!date) return "Vui lòng chọn ngày sinh";
+    const now = new Date("2025-07-29T23:26:00+07:00"); // 11:26 PM +07, 29/07/2025
+    if (new Date(date) >= now) return "Ngày sinh không được lớn hơn hoặc bằng ngày hiện tại (29/07/2025 11:26 PM)";
+    return "";
+  };
+
+  const validateAddress = (value: string, field: string) => {
+    if (!value.trim()) return `Vui lòng nhập ${field}`;
+    return "";
+  };
 
   const handlePersonalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Form submitted with data:", personalData);
+
+    const sdtError = validatePhone(personalData.sdt);
+    const ngaySinhError = validateDate(personalData.ngaySinh);
+    const duongError = validateAddress(personalData.duong, "địa chỉ");
+    const xaError = validateAddress(personalData.xa, "xã/phường");
+    const thanhPhoError = validateAddress(personalData.thanhPho, "tỉnh/thành phố");
+
+    const newErrors = {
+      sdt: sdtError,
+      ngaySinh: ngaySinhError,
+      duong: duongError,
+      xa: xaError,
+      thanhPho: thanhPhoError,
+    };
 
     if (!currentUserId) {
       toast.error("Vui lòng đăng nhập để thực hiện chức năng này");
@@ -177,14 +212,16 @@ export default function ProFile() {
     }
 
     if (!personalData.ten.trim()) {
-      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
+      toast.error("Vui lòng nhập họ và tên");
       return;
     }
 
-    if (!personalData.duong.trim() || !personalData.xa.trim() || !personalData.thanhPho.trim()) {
-      toast.error("Vui lòng điền đầy đủ thông tin địa chỉ");
+    if (Object.values(newErrors).some((error) => error)) {
+      setErrors(newErrors);
       return;
     }
+
+    setErrors({});
 
     const formData = {
       ten: personalData.ten,
@@ -197,12 +234,16 @@ export default function ProFile() {
       thanhPho: personalData.thanhPho,
     };
 
+    console.log("Form data prepared for confirmation:", formData);
     setPendingFormData(formData);
     setShowConfirmDialog(true);
   };
 
   const handleConfirmUpdate = async () => {
-    if (!pendingFormData || !currentUserId) return;
+    if (!pendingFormData || !currentUserId) {
+      toast.error("Dữ liệu không hợp lệ, vui lòng thử lại");
+      return;
+    }
 
     setIsLoading(true);
 
@@ -211,12 +252,22 @@ export default function ProFile() {
         ? `${pendingFormData.duong}, ${pendingFormData.xa}, ${pendingFormData.thanhPho}`
         : "Địa chỉ không xác định";
 
+      console.log("Sending update to API with data:", {
+        ten: pendingFormData.ten,
+        sdt: pendingFormData.sdt,
+        email: user?.email,
+        ngaySinh: pendingFormData.ngaySinh,
+        diaChi,
+        role_id: user?.roleId || 3,
+        trangThai: 1,
+      });
+
       await accountService.updateAccount(currentUserId, {
         ten: pendingFormData.ten,
         sdt: pendingFormData.sdt,
         email: user?.email,
         ngaySinh: pendingFormData.ngaySinh,
-        diaChi: diaChi,
+        diaChi,
         role_id: user?.roleId || 3,
         trangThai: 1,
       });
@@ -225,7 +276,7 @@ export default function ProFile() {
         ten: pendingFormData.ten,
         sdt: pendingFormData.sdt,
         ngaySinh: pendingFormData.ngaySinh,
-        diaChi: diaChi,
+        diaChi,
       });
 
       setIsEditingPersonal(false);
@@ -237,7 +288,6 @@ export default function ProFile() {
 
     } catch (error: any) {
       console.error("Update error:", error);
-
       toast.error("❌ Cập nhật thông tin thất bại!", {
         description: error.message || "Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại.",
         duration: 5000,
@@ -318,9 +368,15 @@ export default function ProFile() {
                 <Label className="text-sm font-medium text-black mb-2 block">Số điện thoại</Label>
                 <Input
                   value={personalData.sdt}
-                  onChange={(e) => setPersonalData({ ...personalData, sdt: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPersonalData({ ...personalData, sdt: value });
+                    const error = validatePhone(value);
+                    setErrors((prev) => ({ ...prev, sdt: error }));
+                  }}
                   className="h-11 bg-white border-gray-300 text-black"
                 />
+                {errors.sdt && <p className="text-red-500 text-sm mt-1">{errors.sdt}</p>}
               </div>
               <div>
                 <Label className="text-sm font-medium text-black mb-2 block">Ngày sinh</Label>
@@ -332,25 +388,30 @@ export default function ProFile() {
                       : ""
                   }
                   onChange={(e) => {
-                    if (e.target.value) {
-                      const date = new Date(e.target.value);
-                      if (!isNaN(date.getTime())) {
-                        setPersonalData({ ...personalData, ngaySinh: date });
-                      }
-                    } else {
-                      setPersonalData({ ...personalData, ngaySinh: undefined });
-                    }
+                    const value = e.target.value ? new Date(e.target.value) : undefined;
+                    setPersonalData({ ...personalData, ngaySinh: value });
+                    const error = validateDate(value);
+                    setErrors((prev) => ({ ...prev, ngaySinh: error }));
                   }}
-                  max={new Date().toISOString().split("T")[0]}
+                  max={new Date("2025-07-29T23:26:00+07:00").toISOString().split("T")[0]}
                   min="1900-01-01"
                   className="h-11 bg-white border-gray-300 text-black"
                 />
+                {errors.ngaySinh && <p className="text-red-500 text-sm mt-1">{errors.ngaySinh}</p>}
               </div>
               <div>
                 <Label className="text-sm font-medium text-black mb-2 block">Tỉnh/Thành phố</Label>
                 <Select
                   value={selectedProvince}
-                  onValueChange={setSelectedProvince}
+                  onValueChange={(value) => {
+                    setSelectedProvince(value);
+                    setErrors((prev) => ({
+                      ...prev,
+                      thanhPho: value ? "" : "Vui lòng chọn tỉnh/thành phố",
+                      xa: prev.xa, // Giữ lỗi xa nếu có
+                    }));
+                  }}
+                  className="h-11 bg-white border-gray-300 text-black"
                 >
                   <SelectTrigger className="h-11 bg-white border-gray-300 text-black">
                     <SelectValue placeholder="Chọn tỉnh/thành phố" />
@@ -363,13 +424,21 @@ export default function ProFile() {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.thanhPho && <p className="text-red-500 text-sm mt-1">{errors.thanhPho}</p>}
               </div>
               <div>
                 <Label className="text-sm font-medium text-black mb-2 block">Xã/Phường</Label>
                 <Select
                   value={selectedWard}
-                  onValueChange={setSelectedWard}
+                  onValueChange={(value) => {
+                    setSelectedWard(value);
+                    setErrors((prev) => ({
+                      ...prev,
+                      xa: value ? "" : selectedProvince ? "Vui lòng chọn xã/phường" : prev.xa,
+                    }));
+                  }}
                   disabled={!selectedProvince}
+                  className="h-11 bg-white border-gray-300 text-black"
                 >
                   <SelectTrigger className="h-11 bg-white border-gray-300 text-black">
                     <SelectValue placeholder="Chọn xã/phường" />
@@ -382,15 +451,22 @@ export default function ProFile() {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.xa && <p className="text-red-500 text-sm mt-1">{errors.xa}</p>}
               </div>
               <div className="col-span-2">
                 <Label className="text-sm font-medium text-black mb-2 block">Địa chỉ</Label>
                 <Input
                   value={personalData.duong}
-                  onChange={(e) => setPersonalData({ ...personalData, duong: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPersonalData({ ...personalData, duong: value });
+                    const error = validateAddress(value, "địa chỉ");
+                    setErrors((prev) => ({ ...prev, duong: error }));
+                  }}
                   className="h-11 bg-white border-gray-300 text-black"
                   placeholder="Nhập số nhà, tên đường..."
                 />
+                {errors.duong && <p className="text-red-500 text-sm mt-1">{errors.duong}</p>}
               </div>
 
               <div className="col-span-2 flex gap-3 pt-4">
@@ -532,10 +608,11 @@ export default function ProFile() {
               <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg">
                 <Calendar className="w-5 h-5 text-gray-500" />
                 <span className="text-black font-medium">
-                  {user?.ngaySinh ?
-                    (typeof user.ngaySinh === 'string' ? user.ngaySinh : format(new Date(user.ngaySinh), "dd/MM/yyyy"))
-                    : "Chưa cập nhật"
-                  }
+                  {user?.ngaySinh
+                    ? typeof user.ngaySinh === "string"
+                      ? user.ngaySinh
+                      : format(new Date(user.ngaySinh), "dd/MM/yyyy")
+                    : "Chưa cập nhật"}
                 </span>
               </div>
             </div>
@@ -548,7 +625,7 @@ export default function ProFile() {
               <div className="flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-lg">
                 <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
                 <span className="text-black font-medium">
-                  {user.diaChi}
+                  {user.diaChi || "Chưa cập nhật"}
                 </span>
               </div>
             </div>
