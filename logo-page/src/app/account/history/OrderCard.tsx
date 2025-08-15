@@ -4,13 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { ShoppingBag, Eye, XCircle, CheckCircle, Loader2 } from "lucide-react";
+import { ShoppingBag, Eye, XCircle, CheckCircle, Loader2, Package } from "lucide-react";
 import { formatDateFlexible } from "@/app/admin/khuyenmai/formatDateFlexible";
 import { EnrichedOrder } from "./types";
 import { palette, statusBadge } from "./palette";
 import { useRouter } from "next/navigation";
 import { anhSanPhamSevice, getAnhByFileName } from "@/services/anhSanPhamService";
-
 
 interface OrderCardProps {
     order: EnrichedOrder;
@@ -19,8 +18,10 @@ interface OrderCardProps {
     handleCancelOrder: (orderId: number) => void;
     handleConfirmDelivery: (orderId: number) => void;
     handleReorder: (order: EnrichedOrder) => void;
+    handleReturnOrder: (orderId: number) => void;
     cancelingId: number | null;
     reorderingId: number | null;
+    returningId: number | null;
 }
 
 export default function OrderCard({
@@ -29,8 +30,10 @@ export default function OrderCard({
     handleCancelOrder,
     handleConfirmDelivery,
     handleReorder,
+    handleReturnOrder,
     cancelingId,
     reorderingId,
+    returningId,
 }: OrderCardProps) {
     const router = useRouter();
     const [imageUrls, setImageUrls] = useState<Record<number, string>>({});
@@ -51,11 +54,11 @@ export default function OrderCard({
             const response = await anhSanPhamSevice.getAnhSanPhamTheoSanPhamId(pid);
             // Check if response is an array and has at least one element
             if (Array.isArray(response) && response.length > 0 && typeof response[0].anhChinh === 'string') {
-                const blob = await getAnhByFileName(response[0].anhChinh); // Access hinhAnhChinh from the first item
+                const blob = await getAnhByFileName(response[0].anhChinh);
                 const url = URL.createObjectURL(blob);
                 setImageUrls((prev) => ({ ...prev, [pid]: url }));
             } else {
-                console.warn(`No valid hinhAnhChinh for product ID: ${pid}`, response);
+                console.warn(`No valid AnhChinh for product ID: ${pid}`, response);
             }
         } catch (error) {
             console.error("Lỗi khi tải ảnh cho product ID:", pid, error);
@@ -218,13 +221,26 @@ export default function OrderCard({
                         </motion.div>
                     )}
 
+                    {(order.trangThai === "Đã giao" || order.trangThai === "Hoàn tất") && (
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                                size="sm"
+                                className="flex items-center gap-2 border-orange-500 text-white bg-orange-500 hover:bg-orange-600 transition-colors duration-200"
+                                onClick={() => router.push(`/account/history/return/${order.id}`)}
+                            >
+                                <Package className="w-4 h-4" />
+                                Hoàn Hàng
+                            </Button>
+                        </motion.div>
+                    )}
+
                     {(order.trangThai === "Hoàn tất" || order.trangThai === "Đã hủy") && (
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button
                                 size="sm"
                                 onClick={() => handleReorder(order)}
                                 disabled={reorderingId === order.id}
-                                className="flex items-center gap-2 border border-yellow-400 text-black bg-white hover:bg-[#FFF3CC] transition-colors duration-200"
+                                className="flex items-center gap-2 border border-yellow-400 text-black bg-white hover:bg-yellow-70 transition-colors duration-200"
                             >
                                 {reorderingId === order.id ? (
                                     <>

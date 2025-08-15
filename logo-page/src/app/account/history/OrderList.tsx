@@ -1,9 +1,7 @@
-
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { EnrichedOrder } from "./types";
 import OrderCard from "./OrderCard";
-
 
 interface OrderListProps {
     orders: EnrichedOrder[];
@@ -12,8 +10,10 @@ interface OrderListProps {
     handleCancelOrder: (orderId: number) => void;
     handleConfirmDelivery: (orderId: number) => void;
     handleReorder: (order: EnrichedOrder) => void;
+    handleReturnOrder: (orderId: number) => void; // Added
     cancelingId: number | null;
     reorderingId: number | null;
+    returningId: number | null; // Added
 }
 
 export default function OrderList({
@@ -23,8 +23,10 @@ export default function OrderList({
     handleCancelOrder,
     handleConfirmDelivery,
     handleReorder,
+    handleReturnOrder, // Added
     cancelingId,
     reorderingId,
+    returningId, // Added
 }: OrderListProps) {
     return (
         <AnimatePresence>
@@ -44,8 +46,10 @@ export default function OrderList({
                             handleCancelOrder={handleCancelOrder}
                             handleConfirmDelivery={handleConfirmDelivery}
                             handleReorder={handleReorder}
+                            handleReturnOrder={handleReturnOrder} // Added
                             cancelingId={cancelingId}
                             reorderingId={reorderingId}
+                            returningId={returningId} // Added
                         />
                     </motion.div>
                 ))}

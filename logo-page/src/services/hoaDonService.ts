@@ -125,73 +125,58 @@ export const HoaDonService = {
   ///  update trangg thai
 
   async updateTrangThai(
-    id: number,
+    ids: number | number[], // Cho phép truyền 1 ID hoặc nhiều ID
     trangThai: keyof typeof TrangThaiHoaDon | string
-  ): Promise<HoaDonDTO> {
+  ): Promise<any> {
     try {
       const nvId = await getCurrentUserId();
-      console.log("Current employee ID:", nvId);
-
       if (!nvId) {
-        throw new Error("No logged-in employee found. Please log in again.");
+        throw new Error("Không tìm thấy nhân viên đang đăng nhập. Vui lòng đăng nhập lại.");
       }
 
-      // Validate trangThai using TrangThaiHoaDon enum values
+      // Kiểm tra trạng thái hợp lệ
       const validStatuses = Object.values(TrangThaiHoaDon);
       if (!validStatuses.includes(trangThai)) {
         throw new Error(
-          `Invalid status: ${trangThai}. Valid statuses are: ${validStatuses.join(
-            ", "
-          )}`
+          `Trạng thái không hợp lệ: ${trangThai}. Các trạng thái hợp lệ: ${validStatuses.join(", ")}`
         );
       }
 
+      // Luôn đảm bảo gửi dạng mảng
+      const hoaDonIds = Array.isArray(ids) ? ids : [ids];
+
       const requestBody = {
-        hoaDonIds: [id],
+        hoaDonIds,
         trangThai,
         idNV: nvId,
       };
-      console.log("Request body for status update:", requestBody);
 
-      const res = await fetchWithAuth(`${API_URL}/${id}/trang-thai`, {
+      const res = await fetchWithAuth(`${API_URL}/trang-thai`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
 
-      console.log("Response status:", res.status);
-      console.log("Response headers:", {
-        authorization: res.headers.get("authorization"),
-        contentType: res.headers.get("content-type"),
-      });
-
       if (!res.ok) {
-        let errorMessage = "Failed to update order status";
         const contentType = res.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
+        let errorMessage = "Cập nhật trạng thái hóa đơn thất bại";
+        if (contentType?.includes("application/json")) {
           const errorData = await res.json();
           errorMessage = errorData?.message || JSON.stringify(errorData);
         } else {
-          const errorText = await res.text();
-          errorMessage = errorText || `HTTP ${res.status}: ${res.statusText}`;
+          errorMessage = await res.text();
         }
         throw new Error(errorMessage);
       }
 
-      try {
-        const data = await res.json();
-        return data;
-      } catch {
-        // Fallback if response is not JSON
-        return { id, trangThai } as HoaDonDTO;
-      }
+      // BE có thể trả về object { thanhCong: [...], loi: [...] }
+      return await res.json();
     } catch (error) {
-      console.error(`Error updating status for order ID ${id}:`, error);
+      console.error(`Lỗi khi cập nhật trạng thái hóa đơn [${ids}]:`, error);
       throw error;
     }
   },
+
 
   async getStatusCounts(): Promise<Record<string, number>> {
     const res = await fetchWithAuth(`${API_URL}/status-count`, {

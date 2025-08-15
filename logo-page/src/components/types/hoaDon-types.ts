@@ -57,6 +57,7 @@ export enum TrangThaiHoaDon {
   COMPLETED = "Hoàn tất",
   CANCELLED = "Đã hủy",
   FAILED = "Thất bại",
+  RETURN = "Hoàn hàng",
 }
 
 export enum PaymentMethods {

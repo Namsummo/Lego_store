@@ -18,7 +18,7 @@ import HoaDonFilter from "./hoaDonFilter";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/layout/(components)/(pages)/Modal";
 import LichSuLogTimeline from "@/shared/LichSuLogTimeline";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, Repeat2 } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -42,7 +42,12 @@ function isValidTrangThaiTransition(current: string, next: string): boolean {
     case "SHIPPED":
       return nextKey === "DELIVERED" || nextKey === "FAILED";
     case "DELIVERED":
+      //   // Cho phép chuyển sang Hoàn hàng hoặc Hoàn tất sau khi đã giao
       return nextKey === "COMPLETED";
+    // || nextKey === "RETURN"
+    // case "RETURN":
+    //   // Sau khi hoàn hàng xong có thể kết thúc quy trình
+    //   return nextKey === "COMPLETED";
     case "FAILED":
       return nextKey === "PENDING" || nextKey === "CANCELLED";
     default:
@@ -253,6 +258,9 @@ const HoaDonManagement = () => {
             >
               <LichSuLogTimeline bang="hoaDon" title="Lịch sử user log" />
             </Modal>
+
+
+
             <HoaDonTable
               data={data}
               page={page}
@@ -261,6 +269,7 @@ const HoaDonManagement = () => {
               handleStatusChange={handleStatusChange}
               PAGE_SIZE={PAGE_SIZE}
               isValidTrangThaiTransition={isValidTrangThaiTransition}
+              onReload={fetchData}
             />
 
             <HoaDonChiTiet

@@ -2,8 +2,11 @@
 import { ShoppingBag, Package, ArrowLeft, Phone, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useRouter } from "next/navigation"; // Import useRouter for navigation
 
 export default function ThanhToanThanhCongPage() {
+  const router = useRouter(); // Initialize router
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl bg-white shadow-xl rounded-2xl overflow-hidden">
@@ -29,29 +32,6 @@ export default function ThanhToanThanhCongPage() {
               phiêu lưu xây dựng!
             </p>
           </div>
-
-          {/* Order Details */}
-          <div className="bg-orange-50 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-orange-600" />
-                <span className="text-sm font-medium text-gray-700">🧱 LEGO Creator Expert:</span>
-              </div>
-              <span className="font-bold text-gray-800">2.450.000 VNĐ</span>
-            </div>
-
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Phương thức:</span>
-                <span className="text-gray-800 font-medium">Thẻ tín dụng</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Thời gian giao hàng:</span>
-                <span className="text-orange-600 font-medium">2-3 ngày</span>
-              </div>
-            </div>
-          </div>
-
           {/* Shipping Info */}
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
             <div className="flex items-start gap-3">
@@ -70,13 +50,16 @@ export default function ThanhToanThanhCongPage() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-medium">
+            <Button
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-medium"
+              onClick={() => router.push("/account/history")} // Navigate to order history
+            >
               📄 Xem chi tiết đơn hàng
             </Button>
 
             <Button
-              // variant="outline"
               className="w-full border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50"
+              onClick={() => router.push("/")} // Navigate to homepage
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Quay lại trang chủ
