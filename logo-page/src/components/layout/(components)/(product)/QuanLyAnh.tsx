@@ -67,6 +67,7 @@ export default function QuanLyAnh() {
       return null;
     }
     return sanPhamChiTiet.anhUrls[mainImageIndex]?.url || null;
+   
   };
 
   return (
@@ -75,7 +76,7 @@ export default function QuanLyAnh() {
       <div className="relative bg-white rounded-2xl shadow-lg border border-gray-200 p-4">
         {getMainImageUrl() ? (
           <Image
-            src={getMainImageUrl()!}
+            src='/images/avatar-admin.png'
             alt={sanPhamChiTiet?.tenSanPham || ""}
             width={400}
             height={400}
@@ -121,7 +122,7 @@ export default function QuanLyAnh() {
                   onClick={() => handleThumbnailClick(idx)}
                 >
                   <Image
-                    src={anh.url}
+                    src='/images/avatar-admin.png'
                     alt={`Thumbnail ${idx + 1}`}
                     width={80}
                     height={80}

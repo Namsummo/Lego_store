@@ -160,7 +160,7 @@ export default function SanPhamList({ ps }: SanPhamListProps) {
                     className="block w-full h-full"
                   >
                     <Image
-                      src={mainImageUrl}
+                      src='/images/bg1.jpg'
                       alt={p.tenSanPham}
                       fill
                       className="object-contain p-4 group-hover:scale-105 transition-transform duration-300 cursor-pointer"

@@ -95,7 +95,7 @@ export function CartItem({
             className="w-20 h-20 relative group flex-shrink-0"
           >
             <Image
-              src={item.image || "/images/placeholder-product.png"}
+              src={"/images/placeholder-product.png"}
               alt={item.name}
               fill
               className="object-cover rounded-md group-hover:opacity-90 transition-opacity duration-200"

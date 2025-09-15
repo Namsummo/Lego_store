@@ -5,6 +5,7 @@ export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) 
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(input, { ...init, headers });
+    console.log("Fetch URL:", input);
     if (res.status === 401) {
         // Tự động logout khi token hết hạn
         localStorage.removeItem("access_token");

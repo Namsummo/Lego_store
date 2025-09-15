@@ -37,7 +37,7 @@ export default function OrderItems({ checkoutItems }: OrderItemsProps) {
           {/* Product Image */}
           <div className="flex-shrink-0">
             <Image
-              src={item.image || "/images/placeholder-product.png"}
+              src={"/images/placeholder-product.png"}
               alt={item.name}
               className="w-16 h-16 object-cover rounded-lg border border-gray-100"
               width={64}
