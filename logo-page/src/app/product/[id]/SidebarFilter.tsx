@@ -51,8 +51,8 @@ export default function SidebarFilter({
   const [isBoSuuTapOpen, setIsBoSuuTapOpen] = useState(false);
   const [isGiaOpen, setIsGiaOpen] = useState(false);
   return (
-    <div className="flex flex-col lg:flex-row gap-8 px-4">
-      <div className="w-full max-w-md bg-yellow-100 p-5 rounded-2xl shadow-lg border border-gray-300 sticky top-4">
+    <div className="flex flex-col lg:flex-row gap-8 px-4 relative z-0">
+      <div className="w-full max-w-md bg-yellow-100 p-5 rounded-2xl shadow-lg border border-gray-300 sticky top-4 z-10">
         <div className="flex items-center justify-between mb-5">
           <h2 className="flex gap-2 text-gray-800 font-bold tracking-wide">
             <FilterIcon className="w-5 h-5" />

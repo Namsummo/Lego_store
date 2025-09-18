@@ -1,43 +1,18 @@
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
+import { ChevronDown, Gift, Gamepad2 } from "lucide-react";
 
 export default function Navbar() {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   return (
     <div className="w-full">
-      {/* Banner */}
-      {/* <div className="relative h-[500px] w-full overflow-hidden">
-        <Image
-          src="/images/banner1.jpg"
-          alt="Banner"
-          fill
-          priority
-          quality={100}
-          className="object-cover"
-          sizes="100vw"
-        /> */}
-
-      {/* Nội dung trên banner */}
-      {/* <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
-          <h1 className="text-4xl md:text-6xl font-bold text-black mb-4 drop-shadow-lg">
-            Siêu khuyến mãi
-          </h1>
-          <p className="text-xl mb-8 max-w-2xl text-black drop-shadow md:text-2xl">
-            Giảm giá lên đến 30% toàn bộ sản phẩm lego
-          </p>
-          <Button className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-lg px-8 py-4 rounded-lg shadow-lg transition-all hover:scale-105">
-            <Link href="/product">MUA NGAY</Link>
-          </Button>
-        </div>
-      </div> */}
-
       {/* Đường dẫn dưới banner */}
-      <div className="w-full bg-orange-300 flex gap-6 justify-center py-4">
+      <div className="w-full bg-orange-300 flex gap-6 justify-center py-4  z-[1000]">
         {[
           { href: "/product", label: "Sản phẩm" },
           { href: "/1", label: "Cửa hàng" },
           { href: "/2", label: "Giới thiệu" },
-          { href: "/lucky-wheel", label: "Phần thưởng" },
-          { href: "/caro", label: "Cờ Caro" },
         ].map((item) => (
           <Link
             key={item.href}
@@ -48,6 +23,55 @@ export default function Navbar() {
             <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-black rounded-full transition-all duration-300 group-hover:w-full"></span>
           </Link>
         ))}
+
+        {/* Dropdown menu cho Games & Rewards */}
+        <div
+          className="relative group"
+          onMouseEnter={() => setIsDropdownOpen(true)}
+          onMouseLeave={() => setIsDropdownOpen(false)}
+        >
+          <button className="relative text-lg md:text-xl font-semibold text-gray-800 transition-all duration-300 hover:text-black flex items-center gap-1">
+            Giải trí & Thưởng
+            <ChevronDown
+              className={`w-4 h-4 transition-transform duration-200 ${
+                isDropdownOpen ? "rotate-180" : ""
+              }`}
+            />
+            <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-black rounded-full transition-all duration-300 group-hover:w-full"></span>
+          </button>
+
+          {/* Dropdown content */}
+          {isDropdownOpen && (
+            <>
+              {/* Invisible bridge để kết nối button và dropdown */}
+              <div
+                className="absolute top-full left-0 right-0 h-1.5 z-[1100]"
+                onMouseEnter={() => setIsDropdownOpen(true)}
+                onMouseLeave={() => setIsDropdownOpen(false)}
+              />
+              <div
+                className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1.5 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[1100] min-w-[200px]"
+                onMouseEnter={() => setIsDropdownOpen(true)}
+                onMouseLeave={() => setIsDropdownOpen(false)}
+              >
+                <Link
+                  href="/lucky-wheel"
+                  className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors duration-200"
+                >
+                  <Gift className="w-5 h-5" />
+                  <span>Vòng quay may mắn</span>
+                </Link>
+                <Link
+                  href="/caro"
+                  className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors duration-200"
+                >
+                  <Gamepad2 className="w-5 h-5" />
+                  <span>Cờ Caro</span>
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

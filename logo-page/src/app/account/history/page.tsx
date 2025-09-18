@@ -260,7 +260,7 @@ export default function OrderHistoryPage() {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className={`text-4xl md:text-5xl font-extrabold ${palette.text} mb-6 drop-shadow-[0_2px_0_rgba(0,0,0,0.08)]`}
+                    className={`text-3xl font-bold ${palette.text} mb-6 drop-shadow-[0_2px_0_rgba(0,0,0,0.08)]`}
                 >
                     Lịch Sử Đơn Hàng
                 </motion.h1>
@@ -284,6 +284,8 @@ export default function OrderHistoryPage() {
                     handleReorder={handleReorder}
                     cancelingId={cancelingId}
                     reorderingId={reorderingId}
+                    handleReturnOrder={() => { }} // TODO: Implement return order logic if needed
+                    returningId={null} // TODO: Set returningId state if needed
                 />
 
                 <OrderDetailModal

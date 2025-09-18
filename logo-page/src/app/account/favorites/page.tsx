@@ -129,7 +129,7 @@ export default function FavoritesPage() {
             // Không hiện thông báo gì cả
         } catch (error) {
             console.error('Error removing from wishlist:', error);
-            toast.error('Có lỗi xảy ra khi xóa sản phẩm khỏi wish list');
+            toast.error('Có lỗi xảy ra khi xóa sản phẩm khỏi yêu thích');
         }
     };
 
@@ -140,7 +140,7 @@ export default function FavoritesPage() {
 
     const confirmDeleteWishList = (wishList: { id: number; ten: string }) => {
         if (!wishList || !wishList.id) {
-            toast.error('Dữ liệu wish list không hợp lệ');
+            toast.error('Dữ liệu yêu thích không hợp lệ');
             return;
         }
         setWishListToDelete(wishList);
@@ -158,14 +158,14 @@ export default function FavoritesPage() {
             setWishListToDelete(null);
 
             // Hiển thị thông báo thành công đẹp
-            setSuccessMessage('Đã xóa wish list thành công!');
+            setSuccessMessage('Đã xóa yêu thích thành công!');
             setShowSuccessNotification(true);
             setTimeout(() => {
                 setShowSuccessNotification(false);
             }, 3000);
         } catch (error) {
             console.error('Delete error:', error);
-            toast.error('Có lỗi xảy ra khi xóa wish list');
+            toast.error('Có lỗi xảy ra khi xóa yêu thích');
         }
     };
 
@@ -224,7 +224,7 @@ export default function FavoritesPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-8">

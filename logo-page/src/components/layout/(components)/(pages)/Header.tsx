@@ -89,10 +89,9 @@ export default function Header() {
 
           {/* Game Button */}
           <Button
-            variant="ghost"
+            className="lego-login-button"
             size="icon"
             onClick={() => router.push("/caro")}
-            className="text-gray-700 transition-colors duration-200 hover:text-purple-600"
             title="Chơi cờ caro"
           >
             <Gamepad2 className="h-5 w-5" />
@@ -100,10 +99,9 @@ export default function Header() {
 
           {user && (
             <Button
-              variant="ghost"
+              className="lego-login-button"
               size="icon"
               onClick={() => router.push("/account/favorites")}
-              className="text-gray-700 transition-colors duration-200"
             >
               <Heart className="h-5 w-5" />
             </Button>

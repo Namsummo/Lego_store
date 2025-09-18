@@ -10,6 +10,7 @@ import { CartItemType } from "@/components/types/cart";
 import { CartItem } from "./(components)/CartItem";
 import CartSummary from "./(components)/CartSummary";
 import { useUserStore } from "@/context/authStore.store";
+import Link from "next/link";
 
 export default function CartPage() {
   const router = useRouter();
@@ -128,6 +129,20 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
+      {/* Breadcrumb */}
+      <div className="w-full">
+        <div className="bg-gray-200 shadow-sm border-b border-gray-100 p-4">
+          <div className="max-w-7xl mx-auto">
+            <nav className="flex items-center space-x-2 text-sm text-gray-600">
+              <Link href="/" className="hover:text-blue-600 transition-colors">
+                Trang Chủ
+              </Link>
+              <span className="text-gray-400">{">"}</span>
+              <span className="text-gray-900 font-medium truncate">Giỏ hàng</span>
+            </nav>
+          </div>
+        </div>
+      </div>
       <div className="max-w-7xl mx-auto p-4 md:p-6">
         {/* Main Content */}
         <div className="flex flex-col xl:flex-row gap-8">

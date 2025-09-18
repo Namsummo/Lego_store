@@ -2,7 +2,7 @@
 import { useDanhMuc } from "@/hooks/useDanhMuc";
 import React, { useState } from "react";
 import SanPhamList from "@/components/layout/(components)/(main)/SanPhamList";
-import Header from "@/components/layout/(components)/(pages)/Header";
+import StickyHeader from "@/components/layout/(components)/(pages)/StickyHeader";
 import Footer from "@/components/layout/(components)/(pages)/Footer";
 import { useSearchStore } from "@/context/useSearch.store";
 import { Button } from "@/components/ui/button";
@@ -125,9 +125,11 @@ export default function AllProductsPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
-      <Navbar />
-      <main className="bg-white text-black">
+      <StickyHeader />
+      <div className="pt-24 relative z-[1000]">
+        <Navbar />
+      </div>
+      <main className="bg-white text-black relative z-0">
         <div className="mb-8 text-center mt-10">
           <h1 className="text-4xl lg:text-4xl font-black mb-4 text-blue-900">
             Lego MyKingDom - Thế giới Lego

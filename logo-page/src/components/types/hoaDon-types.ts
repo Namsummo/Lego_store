@@ -57,7 +57,9 @@ export enum TrangThaiHoaDon {
   COMPLETED = "Hoàn tất",
   CANCELLED = "Đã hủy",
   FAILED = "Thất bại",
-  RETURN = "Hoàn hàng",
+  PARTIAL_RETURN = "Hoàn một phần",
+  FULL_RETURN = "Hoàn toàn bộ",
+  // RETURN = "Hoàn hàng",
 }
 
 export enum PaymentMethods {

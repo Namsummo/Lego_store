@@ -1,4 +1,4 @@
-import Header from "@/components/layout/(components)/(pages)/Header";
+import StickyHeader from "@/components/layout/(components)/(pages)/StickyHeader";
 import Footer from "@/components/layout/(components)/(pages)/Footer";
 import Link from "next/link";
 
@@ -9,10 +9,10 @@ export default function LuckyWheelLayout({
 }) {
     return (
         <div className="min-h-screen flex flex-col bg-gray-100">
-            <Header />
+            <StickyHeader />
 
             {/* Breadcrumb */}
-            <div className="w-full">
+            <div className="w-full pt-24 relative z-10">
                 <div className="bg-gray-100 shadow-sm border-b border-gray-100 p-4">
                     <div className="max-w-6xl mx-auto">
                         <nav className="flex items-center space-x-2 text-sm text-gray-600">
@@ -28,7 +28,7 @@ export default function LuckyWheelLayout({
                 </div>
             </div>
 
-            <main className="flex-1">
+            <main className="flex-1 relative z-10">
                 {children}
             </main>
 

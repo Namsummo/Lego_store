@@ -10,7 +10,7 @@ export const ExchangePointsHeader: React.FC<ExchangePointsHeaderProps> = ({
   currentPoints,
 }) => {
   return (
-    <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white shadow-lg">
+    <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white shadow-lg rounded-2xl overflow-hidden">
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -26,7 +26,7 @@ export const ExchangePointsHeader: React.FC<ExchangePointsHeaderProps> = ({
           </div>
 
           {/* Điểm hiện tại */}
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20 rounded-xl">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
                 <Coins className="h-6 w-6 text-yellow-300" />

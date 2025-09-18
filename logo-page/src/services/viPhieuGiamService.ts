@@ -1,10 +1,11 @@
 import { viPhieuGiamGia } from "@/components/types/viPhieuGiam-types";
+import { fetchWithAuth } from "./fetchWithAuth";
 
 const API_URL = "http://localhost:8080/api/lego-store/vi-phieu-giam-gia";
 
 export const viPhieuGiamService = {
   async themPhieuGiamChoUser(data: { userId: number; phieuGiamGiaId: number }) {
-    const res = await fetch(`${API_URL}/them`, {
+    const res = await fetchWithAuth(`${API_URL}/them`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -20,7 +21,7 @@ export const viPhieuGiamService = {
     return res.json();
   },
   async layPhieuGiamTheoUser(userId: number, trangThai: string = "active") {
-    const res = await fetch(
+    const res = await fetchWithAuth(
       `${API_URL}/user/${userId}?trangThai=${trangThai}`,
       {
         method: "GET",
@@ -38,7 +39,7 @@ export const viPhieuGiamService = {
     return res.json() as Promise<viPhieuGiamGia[]>;
   },
   async doiDiemLayPhieu(data: { userId: number; phieuGiamGiaId: number }) {
-    const res = await fetch(`${API_URL}/doi-diem-phieu`, {
+    const res = await fetchWithAuth(`${API_URL}/doi-diem-phieu`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

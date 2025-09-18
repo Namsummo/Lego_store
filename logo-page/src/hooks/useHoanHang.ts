@@ -1,8 +1,11 @@
-
-import { PhieuHoanHangDTO, TrangThaiPhieuHoan, TrangThaiThanhToan } from "@/components/types/hoanHang-types";
+import {
+    PhieuHoanHangDTO,
+    TrangThaiPhieuHoan,
+    TrangThaiThanhToan,
+    TaoPhieuHoanHangWithFileParams, // thêm dòng này
+} from "@/components/types/hoanHang-types";
 import { hoanHangService } from "@/services/hoanHangService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
 
 // Query keys để quản lý cache
 const queryKeys = {
@@ -35,6 +38,18 @@ export function useTaoPhieuHoanHang() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (dto: PhieuHoanHangDTO) => hoanHangService.taophieu(dto),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.all });
+        },
+    });
+}
+
+// Hook tạo phiếu hoàn hàng có file (dùng cho /tao-phieu-2)
+export function useTaoPhieuHoanHangWithFile() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ dto, fileAnh, fileVid }: TaoPhieuHoanHangWithFileParams) =>
+            hoanHangService.taoPhieu2(dto, fileAnh, fileVid),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.all });
         },
@@ -89,3 +104,4 @@ export function useKiemTraCoTheHoanHang(idHoaDon: number) {
         enabled: !!idHoaDon,
     });
 }
+

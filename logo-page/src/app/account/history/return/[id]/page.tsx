@@ -11,9 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 import { sanPhamService } from "@/services/sanPhamService";
 import { palette } from "../../palette";
-import { CreditCard, Wallet } from "lucide-react";
+import { CreditCard, Wallet, Info } from "lucide-react"; // Thêm icon cho toast
 import { toast } from "sonner";
-import { useTaoPhieuHoanHang } from "@/hooks/useHoanHang";
+import { useTaoPhieuHoanHangWithFile } from "@/hooks/useHoanHang";
 import {
     AlertDialog,
     AlertDialogTrigger,
@@ -35,6 +35,7 @@ export default function ReturnForm() {
     const [reason, setReason] = useState<string>("");
     const [otherReason, setOtherReason] = useState<string>("");
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [selectedVideo, setSelectedVideo] = useState<File | undefined>(undefined);
     const [refundMethod, setRefundMethod] = useState<"bank" | "store">("bank");
     const [bankOwner, setBankOwner] = useState<string>("");
     const [bankNumber, setBankNumber] = useState<string>("");
@@ -49,6 +50,9 @@ export default function ReturnForm() {
     }>({ itemQty: {} });
 
     const [openDialog, setOpenDialog] = useState(false);
+    const [hasRequested, setHasRequested] = useState(false);
+    const [backendMessage, setBackendMessage] = useState<string | null>(null);
+    const [backendError, setBackendError] = useState<string | null>(null);
 
     type SelectableItem = {
         productId: number;
@@ -59,15 +63,23 @@ export default function ReturnForm() {
         quantity: number;
     };
     const [items, setItems] = useState<SelectableItem[]>([]);
-    const taoPhieuHoan = useTaoPhieuHoanHang();
+    const taoPhieuHoan = useTaoPhieuHoanHangWithFile();
 
     useEffect(() => {
         const fetchData = async () => {
             if (!id) return;
             try {
+                // Debug: Kiểm tra token và user info
+                const token = localStorage.getItem("access_token");
+                console.log("Token trong localStorage:", token ? "Có" : "Không có");
+
                 const numericId = Number(id);
                 const orderData = await HoaDonService.getHoaDonById(numericId);
                 const chiTiet = await HoaDonService.getChiTietSanPhamByHoaDonId(numericId);
+
+                // Debug: Kiểm tra orderData có đầy đủ thông tin không
+                console.log("Raw orderData:", orderData);
+
                 const enriched = {
                     ...orderData,
                     chiTietSanPham: (chiTiet || []).map((ct: any) => ({
@@ -75,6 +87,13 @@ export default function ReturnForm() {
                         soLuong: ct.soLuong,
                     })),
                 };
+
+                // Đảm bảo có thông tin user
+                if (!enriched.user && enriched.userId) {
+                    enriched.user = { id: enriched.userId };
+                }
+
+                console.log("Enriched order data:", enriched);
                 setOrder(enriched);
                 let productMap: Record<number, any> = {};
                 try {
@@ -96,6 +115,11 @@ export default function ReturnForm() {
                     } as SelectableItem;
                 });
                 setItems(selectable);
+
+                // Debug: Kiểm tra thông tin đơn hàng
+                console.log("Thông tin đơn hàng:", orderData);
+                console.log("Chi tiết sản phẩm:", chiTiet);
+
             } catch (err) {
                 console.error("Lỗi khi lấy đơn hàng:", err);
                 setOrder(null);
@@ -146,7 +170,18 @@ export default function ReturnForm() {
             (newErrors.itemQty && Object.keys(newErrors.itemQty).length > 0)
         ) {
             setErrors(newErrors);
-            toast.error("Vui lòng kiểm tra lại thông tin đã nhập.");
+            toast(
+                <div className="flex items-center gap-3">
+                    <span className="bg-blue-100 rounded-full p-2">
+                        <Info className="w-6 h-6 text-blue-500" />
+                    </span>
+                    <div>
+                        <div className="font-semibold text-base mb-1">Thông báo</div>
+                        <div className="text-sm text-gray-700">Vui lòng kiểm tra lại thông tin đã nhập.</div>
+                    </div>
+                </div>,
+                { duration: 4000, position: "top-right" }
+            );
             return;
         }
 
@@ -154,48 +189,151 @@ export default function ReturnForm() {
         setOpenDialog(true); // Mở dialog xác nhận
     };
 
-    // Gửi API khi xác nhận ở dialog, hiện toast, chuyển trang
+    // Gửi API khi xác nhận ở dialog, hiện toast, chuyển trạng thái
     const handleConfirm = () => {
         setOpenDialog(false);
-        const chosenItems =
-            returnType === "full"
-                ? items.map((it) => ({ productId: it.productId, quantity: it.maxQuantity }))
-                : items.filter((it) => it.selected).map((it) => ({ productId: it.productId, quantity: it.quantity }));
+        setBackendMessage(null);
+        setBackendError(null);
 
-        const dto: any = {
-            idHoaDon: order.id,
-            loaiHoan: returnType === "full" ? "HOAN_TOAN_BO" : "HOAN_MOT_PHAN",
-            lyDo: reason === "Lý do khác" ? otherReason : reason,
-            phuongThucHoan: refundMethod === "bank" ? "Chuyển khoản" : "Ví cửa hàng",
-            chiTietHoanHangs: chosenItems.map((it) => ({
-                idSanPham: it.productId,
-                soLuongHoan: it.quantity,
-            })),
-        };
-        if (refundMethod === "bank") {
-            dto.tenNganHang = bankName;
-            dto.soTaiKhoan = bankNumber;
-            dto.chuTaiKhoan = bankOwner;
+        try {
+            const chosenItems =
+                returnType === "full"
+                    ? items.map((it) => ({ productId: it.productId, quantity: it.maxQuantity }))
+                    : items.filter((it) => it.selected).map((it) => ({ productId: it.productId, quantity: it.quantity }));
+
+            // Validate dữ liệu trước khi gửi
+            if (!order?.id) {
+                throw new Error("Không tìm thấy thông tin đơn hàng");
+            }
+
+            if (chosenItems.length === 0) {
+                throw new Error("Vui lòng chọn ít nhất 1 sản phẩm để hoàn hàng");
+            }
+
+            // Lấy user ID từ token nếu order.user.id undefined
+            let userId = order.user?.id;
+            if (!userId) {
+                try {
+                    const token = localStorage.getItem("access_token");
+                    if (token) {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        userId = payload.userId || payload.sub || payload.id;
+                        console.log("User ID từ token:", userId);
+                    }
+                } catch (error) {
+                    console.error("Lỗi khi parse token:", error);
+                }
+            }
+
+            console.log("Final User ID:", userId);
+
+            // Kiểm tra quyền: user phải là chủ đơn hàng
+            if (userId && order.userId && Number(userId) !== Number(order.userId)) {
+                throw new Error("Bạn không có quyền tạo phiếu hoàn hàng cho đơn hàng này");
+            }
+
+            const dto: any = {
+                idHoaDon: Number(order.id),
+                loaiHoan: returnType === "full" ? "HOAN_TOAN_BO" : "HOAN_MOT_PHAN",
+                lyDo: reason === "Lý do khác" ? otherReason.trim() : reason,
+                phuongThucHoan: refundMethod === "bank" ? "Chuyển khoản" : "Ví cửa hàng",
+                chiTietHoanHangs: chosenItems.map((it) => ({
+                    idSanPham: Number(it.productId),
+                    soLuongHoan: Number(it.quantity),
+                })),
+            };
+
+            // Thêm user ID vào DTO nếu có
+            if (userId) {
+                dto.userId = Number(userId);
+            }
+
+            // Thêm thông tin ngân hàng nếu chọn chuyển khoản
+            if (refundMethod === "bank") {
+                dto.tenNganHang = bankName.trim();
+                dto.soTaiKhoan = bankNumber.trim();
+                dto.chuTaiKhoan = bankOwner.trim();
+            }
+
+            console.log("DTO gửi lên server:", dto); // Debug log
+            console.log("Current user token:", localStorage.getItem("access_token"));
+
+            taoPhieuHoan.mutate(
+                {
+                    dto,
+                    fileAnh: selectedFiles,
+                    fileVid: selectedVideo,
+                },
+                {
+                    onSuccess: (data) => {
+                        console.log("Response từ server:", data); // Debug log
+                        setBackendMessage("Bạn đã tạo phiếu hoàn thành công");
+                        setHasRequested(true);
+                        toast.success(
+                            <div className="flex items-center gap-3">
+                                <span className="bg-green-100 rounded-full p-2">
+                                    <Info className="w-6 h-6 text-green-600" />
+                                </span>
+                                <div>
+                                    <div className="font-semibold text-base mb-1 text-green-700">Thành công</div>
+                                    <div className="text-sm text-gray-700">Bạn đã tạo phiếu hoàn thành công</div>
+                                </div>
+                            </div>,
+                            { duration: 4000, position: "top-right" }
+                        );
+                    },
+                    onError: (err: any) => {
+                        console.error("Lỗi khi tạo phiếu hoàn hàng:", err); // Debug log
+                        let msg = "Gửi yêu cầu hoàn hàng thất bại. Vui lòng thử lại sau.";
+
+                        if (err?.message) {
+                            msg = err.message;
+                        } else if (err?.response?.data?.message) {
+                            msg = err.response.data.message;
+                        } else if (typeof err === 'string') {
+                            msg = err;
+                        }
+
+                        setBackendError(msg);
+                        setHasRequested(true);
+                        toast.error(
+                            <div className="flex items-center gap-3">
+                                <span className="bg-red-100 rounded-full p-2">
+                                    <Info className="w-6 h-6 text-red-600" />
+                                </span>
+                                <div>
+                                    <div className="font-semibold text-base mb-1 text-red-700">Thất bại</div>
+                                    <div className="text-sm text-gray-700">{msg}</div>
+                                </div>
+                            </div>,
+                            { duration: 5000, position: "top-right" }
+                        );
+                    },
+                }
+            );
+        } catch (error: any) {
+            console.error("Lỗi validation:", error);
+            toast.error(
+                <div className="flex items-center gap-3">
+                    <span className="bg-red-100 rounded-full p-2">
+                        <Info className="w-6 h-6 text-red-600" />
+                    </span>
+                    <div>
+                        <div className="font-semibold text-base mb-1 text-red-700">Lỗi</div>
+                        <div className="text-sm text-gray-700">{error.message}</div>
+                    </div>
+                </div>,
+                { duration: 4000, position: "top-right" }
+            );
         }
-
-        taoPhieuHoan.mutate(dto, {
-            onSuccess: () => {
-                toast.success("Yêu cầu hoàn hàng đã được gửi thành công!");
-                setTimeout(() => {
-                    router.push("/account/history");
-                }, 1200); // Đợi toast hiển thị xong rồi chuyển trang
-            },
-            onError: (err: any) => {
-                toast.error(
-                    err?.message ||
-                    "Gửi yêu cầu hoàn hàng thất bại. Vui lòng thử lại sau."
-                );
-            },
-        });
     };
 
     if (loading) return <p className="p-4">Đang tải...</p>;
     if (!order) return <p className="p-4 text-red-500">Không tìm thấy đơn hàng</p>;
+
+    // Ẩn button nếu phiếu hoàn hàng của hóa đơn này đang CHO_DUYET hoặc đã có phiếu hoàn
+    const isPhieuHoanChoDuyet = order?.phieuHoanHang?.trangThai === "CHO_DUYET";
+    const hasExistingReturn = order?.phieuHoanHang && order.phieuHoanHang.length > 0;
 
     return (
         <>
@@ -333,7 +471,7 @@ export default function ReturnForm() {
                     )}
                 </div>
 
-                {/* Ảnh minh chứng
+                {/* Ảnh minh chứng */}
                 <div className="mb-6">
                     <h2 className="font-semibold mb-2">Hình ảnh minh chứng</h2>
                     <div className="bg-white border rounded-xl p-4">
@@ -358,7 +496,26 @@ export default function ReturnForm() {
                             )}
                         </div>
                     </div>
-                </div> */}
+                </div>
+
+                {/* Video minh chứng (nếu có) */}
+                <div className="mb-6">
+                    <h2 className="font-semibold mb-2">Video minh chứng (nếu có)</h2>
+                    <div className="bg-white border rounded-xl p-4">
+                        <label className="text-[#006DB7] font-medium cursor-pointer">
+                            Chọn video từ máy tính
+                            <input
+                                type="file"
+                                accept="video/*"
+                                className="hidden"
+                                onChange={(e) => setSelectedVideo(e.target.files?.[0])}
+                            />
+                        </label>
+                        {selectedVideo && (
+                            <div className="mt-3 text-xs truncate bg-gray-50 border rounded p-2">{selectedVideo.name}</div>
+                        )}
+                    </div>
+                </div>
 
                 {/* Phương thức hoàn tiền */}
                 <div className="mb-6">
@@ -384,7 +541,7 @@ export default function ReturnForm() {
                                 </div>
                             </label>
 
-                            <label
+                            {/* <label
                                 className={`rounded-xl p-3 cursor-pointer flex items-center gap-3 border transition-all duration-200 ease-out hover:shadow-md ${refundMethod === "store" ? "ring-2 ring-yellow-300 border-yellow-300" : ""}`}
                             >
                                 <input
@@ -401,7 +558,7 @@ export default function ReturnForm() {
                                     <div className="font-medium">Ví cửa hàng</div>
                                     <div className="text-xs text-slate-500">Sử dụng cho lần mua kế tiếp</div>
                                 </div>
-                            </label>
+                            </label> */}
                         </div>
 
                         <motion.div
@@ -453,31 +610,60 @@ export default function ReturnForm() {
                 </div>
 
                 <div className="sticky bottom-4 bg-transparent pt-2">
-                    <AlertDialog open={openDialog} onOpenChange={setOpenDialog}>
-                        <AlertDialogTrigger asChild>
-                            <Button
-                                className="w-full md:w-auto px-6 py-6 rounded-full bg-[#FFD400] hover:bg-[#FFE066] text-black font-semibold border border-yellow-300 shadow-lg transition-all duration-200 ease-out hover:shadow-xl"
-                                onClick={handleRequest}
-                                disabled={taoPhieuHoan.isLoading}
-                            >
-                                {taoPhieuHoan.isLoading ? "Đang gửi..." : "Gửi Yêu Cầu Hoàn Hàng"}
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Xác nhận gửi yêu cầu hoàn hàng?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Bạn có chắc chắn muốn gửi yêu cầu hoàn hàng cho đơn này không?
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleConfirm} disabled={taoPhieuHoan.isLoading}>
-                                    Xác nhận
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    {hasRequested ? (
+                        <div className="w-full text-center py-8">
+                            <div className="text-lg font-semibold text-yellow-600 mb-2">
+                                {backendMessage || "Đang chờ duyệt hoàn hàng"}
+                            </div>
+                            <div className="text-gray-500">
+                                Yêu cầu hoàn hàng của bạn đã được gửi. Vui lòng chờ nhân viên xác nhận!
+                            </div>
+                        </div>
+                    ) : hasExistingReturn ? (
+                        <div className="w-full text-center py-8">
+                            <div className="text-lg font-semibold text-blue-600 mb-2">
+                                Đã có phiếu hoàn hàng
+                            </div>
+                            <div className="text-gray-500">
+                                Đơn hàng này đã có phiếu hoàn hàng. Vui lòng kiểm tra trạng thái trong lịch sử đơn hàng.
+                            </div>
+                        </div>
+                    ) : (
+                        !isPhieuHoanChoDuyet && (
+                            <AlertDialog open={openDialog} onOpenChange={setOpenDialog}>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        className="w-full md:w-auto px-6 py-6 rounded-full bg-[#FFD400] hover:bg-[#FFE066] text-black font-semibold border border-yellow-300 shadow-lg transition-all duration-200 ease-out hover:shadow-xl"
+                                        onClick={handleRequest}
+                                        disabled={taoPhieuHoan.isPending || hasRequested}
+                                    >
+                                        {taoPhieuHoan.isPending ? "Đang gửi..." : "Gửi Yêu Cầu Hoàn Hàng"}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Xác nhận gửi yêu cầu hoàn hàng?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Bạn có chắc chắn muốn gửi yêu cầu hoàn hàng cho đơn này không?
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={() => {
+                                                if (!taoPhieuHoan.isPending && !hasRequested) {
+                                                    handleConfirm();
+                                                }
+                                            }}
+                                            disabled={taoPhieuHoan.isPending || hasRequested}
+                                        >
+                                            Xác nhận
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )
+                    )}
                 </div>
             </motion.div>
         </>

@@ -10,7 +10,7 @@ export const EmptyVouchersState: React.FC = () => {
           <Gift className="h-12 w-12 text-blue-500" />
         </div>
         <h3 className="text-xl font-bold text-gray-700 mb-3">
-          Hiện tại không có phiếu giảm giá nổi bật nào còn hạn để đổi
+          Hiện tại không có phiếu giảm giá nào để đổi
         </h3>
         <p className="text-gray-600 mb-6 text-lg">
           Các phiếu giảm giá có thể đã hết hạn hoặc hết số lượng
@@ -23,7 +23,7 @@ export const EmptyVouchersState: React.FC = () => {
             <h4 className="font-bold text-gray-800">Mẹo hữu ích</h4>
           </div>
           <p className="text-sm text-gray-700 leading-relaxed">
-            Tích lũy điểm bằng cách mua hàng và tham gia các hoạt động trên website để sẵn sàng đổi phiếu mới!
+            Tích lũy điểm bằng cách tham gia các hoạt động trên website để sẵn sàng đổi phiếu mới!
           </p>
         </div>
       </CardContent>

@@ -1,3 +1,6 @@
+import { HoaDonDTO } from "./hoaDon-types";
+import { SanPham } from "./product.type";
+
 export enum TrangThaiPhieuHoan {
     CHO_DUYET = "CHO_DUYET",
     DA_DUYET = "DA_DUYET",
@@ -5,32 +8,63 @@ export enum TrangThaiPhieuHoan {
 }
 
 export enum TrangThaiThanhToan {
+    DANG_HOAN = "DANG_HOAN",
     CHUA_HOAN = "CHUA_HOAN",
     DA_HOAN = "DA_HOAN",
-
 }
 
-export interface PhieuHoanHangDTO {
-    id?: number;
-    idHoaDon: number;
-    lyDoHoan: string;
-    soTienHoan: number;
-    trangThai?: TrangThaiPhieuHoan;
-    trangThaiThanhToan?: TrangThaiThanhToan;
-    ngayTao?: string;
+
+
+
+// ===== INTERFACE CHI TIẾT HOÀN HÀNG =====
+export interface ChiTietHoanHang {
+    id: number;
+    sanPham: SanPham;
+    soLuongHoan: number;
+    giaHoan: number;
+    tongGiaHoan: number;
 }
 
-export interface ErrorResponse {
-    status: number;
-    message: string;
-}
-
+// ===== INTERFACE PHIẾU HOÀN HÀNG =====
 export interface PhieuHoanHang {
     id: number;
-    idHoaDon: number;
-    lyDoHoan: string;
-    soTienHoan: number;
+    ngayHoan: string;
+    loaiHoan: string;
+    lyDo: string;
+    phuongThucHoan: string;
+    tenNganHang?: string;
+    soTaiKhoan?: string;
+    chuTaiKhoan?: string;
+    tongTienHoan: number;
     trangThai: TrangThaiPhieuHoan;
     trangThaiThanhToan: TrangThaiThanhToan;
-    ngayTao: string;
+    ngayDuyet?: string;
+    ngayHoanTien?: string;
+    hoaDon?: HoaDonDTO;
+    chiTietHoanHangs?: ChiTietHoanHang[];
 }
+
+// ===== DTO GỬI LÊN BACKEND =====
+export interface PhieuHoanHangDTO {
+    idHoaDon: number;
+    loaiHoan: string;
+    lyDo: string;
+    phuongThucHoan: string;
+    tenNganHang?: string;
+    soTaiKhoan?: string;
+    chuTaiKhoan?: string;
+    chiTietHoanHangs: ChiTietHoanHangDTO[];
+}
+
+export interface ChiTietHoanHangDTO {
+    idSanPham: number;
+    soLuongHoan: number;
+}
+
+// DTO gửi lên backend khi tạo phiếu hoàn hàng có file
+export interface TaoPhieuHoanHangWithFileParams {
+    dto: PhieuHoanHangDTO;
+    fileAnh: File[];
+    fileVid?: File;
+}
+

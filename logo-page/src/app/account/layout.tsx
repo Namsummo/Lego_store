@@ -1,16 +1,14 @@
 "use client";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { ReactNode } from "react";
+import React, { ReactNode, useState, useEffect } from "react";
 import { useUserStore } from "@/context/authStore.store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, ShoppingBag, MapPin, Tag, Lock, Heart, Gift } from "lucide-react";
+import { User, ShoppingBag, MapPin, Tag, Lock, Heart, Gift } from "lucide-react";
 import Header from "@/components/layout/(components)/(pages)/Header";
 import Footer from "@/components/layout/(components)/(pages)/Footer";
-import { useRouter } from "next/navigation";
 
 const menus = [
   {
@@ -59,19 +57,69 @@ const menus = [
 
 export default function Accountlayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const user = useUserStore((state) => state.user);
   const userName = user?.ten || "";
+  const currentMenu = menus.find((m) => pathname?.startsWith(m.href));
+  const currentLabel = currentMenu?.label || "Tài khoản";
+  
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Nếu scroll xuống dưới và vượt quá 100px thì ẩn header
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsHeaderVisible(false);
+      } 
+      // Nếu scroll lên trên thì hiện header
+      else if (currentScrollY < lastScrollY) {
+        setIsHeaderVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [lastScrollY]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header />
+    <div className="min-h-screen flex flex-col bg-white">
+      <div 
+        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
+          isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <Header />
+      </div>
 
-      <div className="ml-3 flex flex-1 h-[calc(40vh-40px)]"> {/* Fixed height minus header */}
+      {/* Breadcrumb */}
+      <div className="w-full pt-24 relative z-10">
+        <div className="bg-gray-200 shadow-sm border-b border-gray-100 p-4">
+          <div className="max-w-6xl mx-auto">
+            <nav className="flex items-center space-x-2 text-sm text-gray-600">
+              <Link href="/" className="hover:text-blue-600 transition-colors">
+                Trang Chủ
+              </Link>
+              <span className="text-gray-400">{">"}</span>
+              <span className="text-gray-900 font-medium truncate">
+                {currentLabel}
+              </span>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-1 h-[calc(40vh-40px)] pt-0"> {/* Fixed height minus header; breadcrumb already offsets header height */}
         {/* Sidebar - User Profile Card - Fixed width */}
-        <aside className="w-80 min-w-80 h-200 bg-white shadow-sm flex flex-col">
+        <aside className="w-80 min-w-80 min-h-screen bg-white shadow-sm flex flex-col">
           {/* Back to Home Button */}
-          <div className="p-4 border-b border-gray-100 flex-shrink-0">
+          {/* <div className="p-4 border-b border-gray-100 flex-shrink-0">
             <Button
               onClick={() => router.push("/")}
               variant="ghost"
@@ -80,10 +128,10 @@ export default function Accountlayout({ children }: { children: ReactNode }) {
               <ArrowLeft className="w-4 h-2 mr-2" />
               Quay lại trang chủ
             </Button>
-          </div>
+          </div> */}
 
-          {/* Profile Section - Orange Gradient - Fixed height */}
-          <div className="bg-gradient-to-br from-orange-400 via-orange-500 to-yellow-500 p-8 text-white relative overflow-hidden flex-shrink-0 h-53 text-center">
+          {/* Profile Section - Circular Gradient */}
+          <div className="mt-7 bg-gradient-to-br from-orange-400 via-orange-500 to-yellow-500 p-6 text-white relative overflow-hidden flex-shrink-0 rounded-full w-56 h-56 mx-auto flex flex-col items-center justify-center text-center">
             {/* Decorative pattern */}
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-4 right-4 w-20 h-20 bg-white rounded-full opacity-20"></div>
@@ -102,12 +150,7 @@ export default function Accountlayout({ children }: { children: ReactNode }) {
                 </Avatar>
               </div>
             </div>
-
-            {/* User Name */}
-            <h2 className="text-center text-xl font-bold mb-2 relative z-10">
-              {userName || "Nguyễn Văn A"}
-            </h2>
-
+            {/* Username moved below circle */}
             {/* VIP Badge
             <div className="flex justify-center mb-4 relative z-10">
               <span className="text-sm text-orange-100 font-medium">
@@ -124,6 +167,13 @@ export default function Accountlayout({ children }: { children: ReactNode }) {
                 <span className="text-sm font-medium">Premium</span>
               </div>
             </div> */}
+          </div>
+
+          {/* Username under avatar circle */}
+          <div className="px-6 mt-5 mb-2 text-center">
+            <h2 className="text-lg font-bold text-gray-800">
+              {userName || "Nguyễn Văn A"}
+            </h2>
           </div>
 
           <Separator />
@@ -158,6 +208,9 @@ export default function Accountlayout({ children }: { children: ReactNode }) {
             </nav>
           </ScrollArea>
         </aside>
+
+        {/* Vertical separator between sidebar and main content */}
+        <Separator orientation="vertical" className="h-full  bg-gray-200/60" />
 
         {/* Main content - Scrollable */}
         <main className="flex-1 bg-white overflow-hidden">

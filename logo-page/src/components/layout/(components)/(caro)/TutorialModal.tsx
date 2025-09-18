@@ -15,7 +15,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ showTutorial, onClose }) 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md mx-4">
+      <Card className="w-full max-w-md mx-4 bg-white text-gray-900">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
@@ -39,7 +39,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ showTutorial, onClose }) 
               <li><strong>Khó:</strong> AI thông minh, thử thách cao</li>
             </ul>
           </div>
-          <Button onClick={onClose} className="w-full">
+          <Button onClick={onClose} className="w-full bg-purple-500 text-white hover:bg-purple-600">
             Bắt đầu chơi
           </Button>
         </CardContent>

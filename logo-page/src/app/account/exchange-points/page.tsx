@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useGetPhieuGiamGiaNoiBat } from "@/hooks/usePhieuGiam";
 import { useDoiDiemLayPhieu, useGetViPhieuGiamGiaTheoUser } from "@/hooks/useViPhieuGiamGia";
+import { useLichSuDoiDiem } from "@/hooks/useLichSuDoiDiem";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserStore } from "@/context/authStore.store";
 import { PhieuGiamGia } from "@/components/types/phieugiam.type";
@@ -17,6 +18,8 @@ import { VoucherCard } from "@/components/layout/(components)/(exchange-points)/
 import { ConfirmExchangeDialog } from "@/components/layout/(components)/(exchange-points)/ConfirmExchangeDialog";
 import { ErrorNotification } from "@/components/layout/(components)/(exchange-points)/ErrorNotification";
 import { EmptyVouchersState } from "@/components/layout/(components)/(exchange-points)/EmptyVouchersState";
+import { LichSuDoiDiemModal } from "@/components/layout/(components)/(exchange-points)/LichSuDoiDiemModal";
+import { LichSuButton } from "@/components/layout/(components)/(exchange-points)/LichSuButton";
 
 export default function ExchangePointsPage() {
   const { user } = useUserStore();
@@ -27,9 +30,11 @@ export default function ExchangePointsPage() {
   const [notificationMessage, setNotificationMessage] = useState("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [voucherToExchange, setVoucherToExchange] = useState<PhieuGiamGia | null>(null);
+  const [showLichSuModal, setShowLichSuModal] = useState(false);
 
   const { data: vouchers = [], isLoading } = useGetPhieuGiamGiaNoiBat();
   const { data: userVouchers = [] } = useGetViPhieuGiamGiaTheoUser(user?.id, "active");
+  const { data: lichSuDoiDiem = [], isLoading: isLoadingLichSu } = useLichSuDoiDiem(user?.id);
   const doiDiemMutation = useDoiDiemLayPhieu();
 
   // Lấy danh sách ID phiếu giảm giá mà user đã đổi
@@ -85,6 +90,7 @@ export default function ExchangePointsPage() {
       // Refresh cache để cập nhật danh sách phiếu giảm giá và user data
       await queryClient.invalidateQueries({ queryKey: ["viPhieuGiamGiaTheoUser"] });
       await queryClient.invalidateQueries({ queryKey: ["phieuGiamGiaNoiBat"] });
+      await queryClient.invalidateQueries({ queryKey: ["lichSuDoiDiem"] });
       
       // Refresh user data từ server để đảm bảo đồng bộ
       setTimeout(() => {
@@ -223,6 +229,14 @@ export default function ExchangePointsPage() {
         getDiscountText={getDiscountText}
       />
 
+      {/* Modal lịch sử đổi điểm */}
+      <LichSuDoiDiemModal
+        isOpen={showLichSuModal}
+        onClose={() => setShowLichSuModal(false)}
+        lichSuData={lichSuDoiDiem}
+        isLoading={isLoadingLichSu}
+      />
+
       <div className="min-h-screen bg-gradient-to-br">
         {/* Header */}
         <ExchangePointsHeader currentPoints={user?.diemTichLuy || 0} />
@@ -232,8 +246,14 @@ export default function ExchangePointsPage() {
           <StatsCards
             totalVouchers={exchangeableVouchers.length}
             affordableVouchers={exchangeableVouchers.filter(v => canAfford(v)).length}
-            featuredVouchers={exchangeableVouchers.length}
           />
+
+          {/* Nút xem lịch sử đổi điểm */}
+          <div className="mb-8 flex justify-end">
+            <LichSuButton 
+              onClick={() => setShowLichSuModal(true)}
+            />
+          </div>
 
           {/* Danh sách phiếu giảm giá */}
           {isLoading ? (

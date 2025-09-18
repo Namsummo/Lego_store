@@ -1,14 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Header from "./(components)/(pages)/Header";
-import Footer from "./(components)/(pages)/Footer";
+import Header from "./Header";
 
-interface MainLayoutProps {
-  children: React.ReactNode;
-}
-
-export default function MainLayout({ children }: MainLayoutProps) {
+export default function StickyHeader() {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -36,16 +31,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
   }, [lastScrollY]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
-      <div 
-        className={`fixed top-0 left-0 right-0 z-[2000] transition-transform duration-300 ease-in-out ${
-          isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
-        }`}
-      >
-        <Header />
-      </div>
-      <main className="pt-24">{children}</main>
-      <Footer />
+    <div 
+      className={`fixed top-0 left-0 right-0 z-[2000] transition-transform duration-300 ease-in-out ${
+        isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+      }`}
+    >
+      <Header />
     </div>
   );
 }

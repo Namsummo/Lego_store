@@ -8,8 +8,13 @@ import StatusCardList from "./StatusCardList";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import OrderTable from "./OrderTable";
+import TabHeader from "./TabHeader"; // import tab
+import ReturnOrderManager from "./ReturnOrderManager";
 
 export default function TrangThaiHoaDonPage() {
+  const [tabIndex, setTabIndex] = useState(0); // tab quản lý
+
+  // Đơn hàng state
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterPayment, setFilterPayment] = useState("ALL");
@@ -24,12 +29,11 @@ export default function TrangThaiHoaDonPage() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 10;
 
+  // Đơn hàng fetch
   const fetchHoaDons = useCallback(() => {
     setLoading(true);
-    HoaDonService.getPagedHoaDons(0, 1000) // Lấy toàn bộ để lọc & phân trang client-side
-      .then((res) => {
-        setHoaDonData({ content: res.content, totalPages: res.totalPages });
-      })
+    HoaDonService.getPagedHoaDons(0, 1000)
+      .then((res) => setHoaDonData({ content: res.content, totalPages: res.totalPages }))
       .catch((err) => {
         console.error("Lỗi khi tải hóa đơn:", err);
         toast.error("Không thể tải dữ liệu hóa đơn.");
@@ -47,32 +51,29 @@ export default function TrangThaiHoaDonPage() {
   }, []);
 
   useEffect(() => {
-    fetchHoaDons();
-    fetchStatusCounts();
-  }, [fetchHoaDons, fetchStatusCounts]);
+    if (tabIndex === 0) {
+      fetchHoaDons();
+      fetchStatusCounts();
+    }
+    // Nếu tabIndex === 1, có thể fetch dữ liệu hoàn hàng ở đây sau này
+  }, [fetchHoaDons, fetchStatusCounts, tabIndex]);
 
+  // Lọc & phân trang đơn hàng
   const filteredList = useMemo(() => {
     if (!hoaDonData) return [];
-
     const searchText = search.toLowerCase();
-
     return hoaDonData.content.filter((o) => {
       const statusKey = Object.entries(TrangThaiHoaDon).find(
         ([, label]) => label === o.trangThai
       )?.[0];
-
-      const matchesStatus =
-        filterStatus === "ALL" || statusKey === filterStatus;
-      const matchesPayment =
-        filterPayment === "ALL" || o.phuongThucThanhToan === filterPayment;
-
+      const matchesStatus = filterStatus === "ALL" || statusKey === filterStatus;
+      const matchesPayment = filterPayment === "ALL" || o.phuongThucThanhToan === filterPayment;
       const matchesSearch =
         !search ||
         o.ten?.toLowerCase().includes(searchText) ||
         o.maHD?.toLowerCase().includes(searchText) ||
         o.phuongThucThanhToan?.toLowerCase().includes(searchText) ||
         o.maVanChuyen?.toLowerCase().includes(searchText);
-
       return matchesStatus && matchesPayment && matchesSearch;
     });
   }, [hoaDonData, filterStatus, filterPayment, search]);
@@ -102,17 +103,14 @@ export default function TrangThaiHoaDonPage() {
       toast.error("Không tìm thấy hóa đơn.");
       return;
     }
-
     if (currentHoaDon.trangThai === newStatus) {
       toast.warning("Trạng thái mới giống trạng thái hiện tại.");
       return;
     }
-
     if (!isValidTrangThaiTransition(currentHoaDon.trangThai, newStatus)) {
       toast.error("Chuyển trạng thái không hợp lệ.");
       return;
     }
-
     try {
       await HoaDonService.updateTrangThai(id, newStatus);
       toast.success("Cập nhật trạng thái thành công.");
@@ -126,20 +124,13 @@ export default function TrangThaiHoaDonPage() {
 
   function isValidTrangThaiTransition(current: string, next: string): boolean {
     if (!current || !next) return false;
-
-    const keyMap = Object.entries(TrangThaiHoaDon).reduce(
-      (acc, [key, value]) => {
-        acc[value] = key;
-        return acc;
-      },
-      {} as Record<string, string>
-    );
-
+    const keyMap = Object.entries(TrangThaiHoaDon).reduce((acc, [key, value]) => {
+      acc[value] = key;
+      return acc;
+    }, {} as Record<string, string>);
     const currentKey = keyMap[current];
     const nextKey = keyMap[next];
-
     if (!currentKey || !nextKey) return false;
-
     if (currentKey === "PENDING") {
       return nextKey === "PROCESSING" || nextKey === "CANCELLED";
     } else if (currentKey === "PROCESSING") {
@@ -155,43 +146,56 @@ export default function TrangThaiHoaDonPage() {
     } else if (currentKey === "FAILED") {
       return nextKey === "PENDING" || nextKey === "CANCELLED";
     }
-
     return false;
   }
 
+  // ----------- Giao diện
   return (
-    <Card className="p-4 bg-gray-800 shadow-md w-full h-full">
-      <StatusCardList
-        statusCounts={statusCounts}
-        filterStatus={filterStatus}
-        onCardClick={handleCardClick}
-      />
-
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <OrderFilter
-          search={search}
-          setSearch={setSearch}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          filterPayment={filterPayment}
-          setFilterPayment={setFilterPayment}
-          orders={hoaDonData?.content || []}
-          setPage={setPage}
-          PAGE_SIZE={PAGE_SIZE}
-        />
-      </div>
-
-      <OrderTable
-        data={{
-          content: pagedData,
-          totalPages: totalFilteredPages,
-        }}
-        page={page}
-        setPage={setPage}
-        PAGE_SIZE={PAGE_SIZE}
-        isValidTrangThaiTransition={isValidTrangThaiTransition}
-        handleStatusUpdate={handleStatusUpdate}
-      />
-    </Card>
+    <div className="w-full h-full">
+      {/* Tab chuyển đổi */}
+      <TabHeader tabIndex={tabIndex} setTabIndex={setTabIndex} />
+      <Card className="p-4 bg-gray-800 shadow-md w-full h-full">
+        {/* Tab Đơn Hàng */}
+        {tabIndex === 0 && (
+          <>
+            <StatusCardList
+              statusCounts={statusCounts}
+              filterStatus={filterStatus}
+              onCardClick={handleCardClick}
+            />
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <OrderFilter
+                search={search}
+                setSearch={setSearch}
+                filterStatus={filterStatus}
+                setFilterStatus={setFilterStatus}
+                filterPayment={filterPayment}
+                setFilterPayment={setFilterPayment}
+                orders={hoaDonData?.content || []}
+                setPage={setPage}
+                PAGE_SIZE={PAGE_SIZE}
+              />
+            </div>
+            <OrderTable
+              data={{
+                content: pagedData,
+                totalPages: totalFilteredPages,
+              }}
+              page={page}
+              setPage={setPage}
+              PAGE_SIZE={PAGE_SIZE}
+              isValidTrangThaiTransition={isValidTrangThaiTransition}
+              handleStatusUpdate={handleStatusUpdate}
+            />
+          </>
+        )}
+        {/* Tab Hoàn Hàng */}
+        {tabIndex === 1 && (
+          <div className="p-8 text-center text-lg font-semibold text-[#2176ff]">
+            {tabIndex === 1 && <ReturnOrderManager />}
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }

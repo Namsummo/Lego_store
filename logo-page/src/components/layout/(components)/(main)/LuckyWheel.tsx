@@ -317,7 +317,7 @@ export default function LuckyWheel() {
             <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
                 <div className="relative w-full lg:w-1/2 p-6">
                     <h1 className="text-4xl font-extrabold text-blue-700 text-center mb-6 drop-shadow-md">
-                        Vòng Quay May Mắn 3D
+                        Vòng Quay May Mắn
                     </h1>
                     <motion.div
                         className="relative w-80 h-80 mx-auto"

@@ -3,7 +3,8 @@
 import React from 'react';
 import { useUserStore } from '@/context/authStore.store';
 import { Button } from '@/components/ui/button';
-import { Gamepad2, Sparkles } from 'lucide-react';
+import { Gamepad2, Sparkles, Coins } from 'lucide-react';
+import Link from 'next/link';
 
 interface GameHeaderProps {
   onToggleTutorial: () => void;
@@ -49,6 +50,15 @@ const GameHeader: React.FC<GameHeaderProps> = ({
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Hướng dẫn
+            </Button>
+            <Button
+              size="sm"
+              className="shadow-md hover:shadow-lg transition-all duration-300 text-gray-700 hover:text-gray-900 bg-white"
+            >
+              <Link href="/account/exchange-points" className="flex items-center">
+                <Coins className="w-4 h-4 mr-2" />
+                Đổi điểm
+              </Link>
             </Button>
             <Button
               onClick={onTogglePause}             
